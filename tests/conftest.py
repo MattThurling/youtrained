@@ -117,5 +117,10 @@ def no_real_credentials(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     """Never read the developer's .env or exported API keys inside tests."""
     monkeypatch.setenv("YOUTRAINED_ENV_FILE", str(tmp_path / "missing.env"))
     monkeypatch.setattr(config, "_DOTENV_LOADED", False)
-    for var in ("YOUTUBE_API_KEY", "SPOTIFY_CLIENT_ID", "SPOTIFY_CLIENT_SECRET"):
+    for var in (
+        "YOUTUBE_API_KEY",
+        "SPOTIFY_CLIENT_ID",
+        "SPOTIFY_CLIENT_SECRET",
+        "GA_MEASUREMENT_ID",
+    ):
         monkeypatch.delenv(var, raising=False)

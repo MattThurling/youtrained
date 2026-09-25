@@ -197,3 +197,11 @@ def test_artist_only_report_via_channel_title(client):
     )
     assert "Song 3" in page.text and "What you can do" in page.text
     assert "No matches" not in page.text
+
+
+def test_ga_tag_only_when_configured(client, monkeypatch):
+    assert "googletagmanager" not in client.get("/").text
+    monkeypatch.setenv("GA_MEASUREMENT_ID", "G-TEST123")
+    page = client.get("/").text
+    assert "gtag/js?id=G-TEST123" in page
+    assert "'analytics_storage': 'denied'" in page, "consent denied by default"

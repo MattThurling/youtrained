@@ -51,7 +51,10 @@ def create_app(
 
     def render(name: str, request: Request, status: int = 200, **ctx) -> HTMLResponse:
         return templates.TemplateResponse(
-            request, name, {"version": __version__, **ctx}, status_code=status
+            request,
+            name,
+            {"version": __version__, "ga_id": config.ga_measurement_id(), **ctx},
+            status_code=status,
         )
 
     def load_report(report_id: str) -> dict:

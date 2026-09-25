@@ -6,6 +6,20 @@
   <title>{% block title %}YouTrained{% endblock %}</title>
   {% block head %}{% endblock %}
   <link rel="stylesheet" href="/static/style.css">
+  {% if ga_id %}
+  <script>
+    // Consent Mode: denied by default, so GA sets no cookies and no banner is needed (UK PECR).
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_storage': 'denied', 'ad_user_data': 'denied', 'ad_personalization': 'denied',
+      'analytics_storage': 'denied'
+    });
+    gtag('js', new Date());
+    gtag('config', '{{ ga_id }}', { 'anonymize_ip': true });
+  </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_id }}"></script>
+  {% endif %}
 </head>
 <body>
   <header class="site">

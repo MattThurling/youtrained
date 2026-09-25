@@ -47,6 +47,12 @@ def spotify_credentials() -> tuple[str, str] | None:
     return (cid, secret) if cid and secret else None
 
 
+def ga_measurement_id() -> str | None:
+    """Google Analytics 4 measurement id (G-...). Unset locally and in tests: no tag rendered."""
+    load_dotenv()
+    return os.environ.get("GA_MEASUREMENT_ID") or None
+
+
 PLATFORM_CACHE_TTL_S = 24 * 3600
 
 NOT_LEGAL_ADVICE = (
