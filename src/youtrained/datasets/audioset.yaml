@@ -1,0 +1,32 @@
+name: AudioSet
+publisher: Google Research (Sound Understanding group)
+year: 2017
+homepage: https://research.google.com/audioset/
+licence:
+  name: CC BY 4.0 (ontology CC BY-SA 4.0)
+  url: https://creativecommons.org/licenses/by/4.0/
+key_types: [youtube_video]
+usage:
+  role: [training, evaluation]
+  cited_by:
+    - model: AudioLDM (University of Surrey and others, 2023)
+      url: https://arxiv.org/abs/2301.12503
+      note: >
+        The AudioLDM paper lists its datasets as AudioSet, AudioCaps, Freesound and the
+        BBC Sound Effects library, and uses AudioSet audio for latent diffusion training
+        (arXiv, 29 January 2023).
+    - model: MusicLM / MusicCaps (Google, 2023)
+      url: https://arxiv.org/abs/2301.11325
+      note: >
+        MusicCaps, the text-to-music evaluation benchmark released with MusicLM, was
+        built from ten-second AudioSet clips (arXiv, 26 January 2023).
+description: >
+  AudioSet is a list of about 2.08 million ten-second segments of YouTube videos, each
+  identified by video id and start and end times and labelled by human annotators with one
+  or more of 527 sound classes. Google published it in 2017 as a general sound-event
+  dataset. It contains only identifiers and labels, not audio; anyone using it downloads the
+  clips from YouTube. It is widely used to train and evaluate general-purpose audio models
+  and audio-text models, and as the source pool for music-specific subsets such as MusicCaps.
+  YouTrained indexes only the segments carrying at least one label under the Music branch of
+  the AudioSet ontology, and records which of the three published splits (eval,
+  balanced_train, unbalanced_train) each segment appears in.

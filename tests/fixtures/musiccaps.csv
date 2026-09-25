@@ -1,0 +1,21 @@
+ytid,start_s,end_s,audioset_positive_labels,aspect_list,caption,author_id,is_balanced_subset,is_audioset_eval
+s66wYS3opk6,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 0 with a steady beat.,4,False,False
+yT7gBCK-BQ4,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 1 with a steady beat.,4,False,False
+sTvxXL2fxW4,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 2 with a steady beat.,4,False,False
+6BjpW7Rp-kq,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 3 with a steady beat.,4,False,False
+czDYQaqcvns,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 4 with a steady beat.,4,False,False
+SnaNQLuSvsm,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 5 with a steady beat.,4,False,False
+9c8hHiy_U35,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 6 with a steady beat.,4,False,False
+F29Nr2pGLeJ,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 7 with a steady beat.,4,False,False
+qkXJWzkMBxz,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 8 with a steady beat.,4,False,False
+JD65hmD_MkE,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 9 with a steady beat.,4,False,False
+XF09Jj1Ofok,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 10 with a steady beat.,4,False,False
+BO_yY1vy1Dx,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 11 with a steady beat.,4,False,False
+9M71uUC6dXE,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 12 with a steady beat.,4,False,False
+dJc9SE3diMq,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 13 with a steady beat.,4,False,False
+EmRFgtLiVRn,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 14 with a steady beat.,4,False,False
+KzooQLKR9hs,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 15 with a steady beat.,4,False,False
+Mbpq99FJ02j,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 16 with a steady beat.,4,False,False
+ExvAZu0pQS6,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 17 with a steady beat.,4,False,False
+xNmULcMQd_R,30,40,"/m/04rlf,/m/0kpv1t","[""pop"", ""female vocal""]",A pop song 18 with a steady beat.,4,False,False
+s66wYS3opk6,60,70,/m/04rlf,"[""rock""]",Second clip of the first video.,2,True,True

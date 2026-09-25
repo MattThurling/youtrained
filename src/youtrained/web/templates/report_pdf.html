@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>YouTrained evidence report – {{ report.subject.title }}</title>
+<style>
+  @page { size: A4; margin: 18mm; @bottom-center { content: "YouTrained v{{ version }} · " counter(page) " / " counter(pages); font-size: 9pt; color: #666; } }
+  body { font: 10.5pt/1.45 Helvetica, Arial, sans-serif; color: #111; }
+  h1 { font-size: 20pt; margin: 0 0 4pt; } h2 { font-size: 14pt; margin: 18pt 0 6pt; border-bottom: 1px solid #ccc; }
+  h3 { font-size: 11pt; margin: 10pt 0 2pt; } code { font-family: Menlo, monospace; font-size: 9pt; }
+  .meta, .small { color: #555; font-size: 9pt; } .hit { border-left: 3px solid #f5c400; padding-left: 8pt; margin: 8pt 0; page-break-inside: avoid; }
+  dl { margin: 2pt 0; } dl div { margin: 1pt 0; } dt { font-weight: bold; display: inline; } dd { display: inline; margin: 0; }
+  .legal { border: 1px solid #999; padding: 6pt; margin-top: 12pt; font-size: 9pt; }
+  table { border-collapse: collapse; font-size: 8.5pt; } td, th { border: 1px solid #ccc; padding: 2pt 4pt; text-align: left; }
+</style>
+</head>
+<body>
+<h1>{{ headline }}</h1>
+<p class="meta">Subject: {{ report.subject.title }} ({{ report.subject.url }})<br>
+Generated {{ report.created_at }} by YouTrained v{{ report.tool_version }}. Report id {{ report.report_id }}.<br>
+JSON export SHA-256: <code>{{ sha256 }}</code></p>
+
+<h2>Summary</h2>
+<p>{{ report.summary.checked }} video ids checked; {{ report.summary.matched_keys }} matched; {{ report.summary.hit_count }} dataset rows in total across {{ report.summary.datasets|join(", ") or "no datasets" }}.</p>
+
+{% for a in report.artists %}
+<h2>Listed under artist "{{ a.name or a.artist_id }}" in LAION-DISCO-12M ({{ a.song_count }} songs)</h2>
+<p class="small">{% if a.basis == "artist_id" %}Exact match on YouTube Music artist id {{ a.artist_id }}.{% else %}Probable match by artist name; artist id {{ a.artist_id }}.{% endif %} {{ a.url }}</p>
+{% for hit in a.songs %}
+<div class="hit"><h3>{{ hit.artist }} – {{ hit.title }}</h3>
+<dl><div><dt>Dataset row:</dt> <dd><code>{{ hit.dataset_row_id }}</code></dd></div>
+{% if hit.extra.album_name %}<div><dt>Album:</dt> <dd>{{ hit.extra.album_name }}</dd></div>{% endif %}
+<div><dt>Video:</dt> <dd>{{ hit.urls.watch }}</dd></div></dl></div>
+{% endfor %}
+{% endfor %}
+
+{% for name, ds in report.datasets.items() if ds.hit_count %}
+<h2>{{ ds.name }} ({{ ds.publisher }}, {{ ds.year }})</h2>
+<p>{{ ds.description }}</p>
+<p class="small">Licence: {{ ds.licence.name }}. Used for: {{ ds.usage.role|join(" and ") }}. {{ ds.homepage }}</p>
+{% for hit in report.hits if hit.dataset == name %}
+<div class="hit">
+  <h3>{{ hit.your_title or hit.key }}</h3>
+  <dl>
+    <div><dt>Dataset row:</dt> <dd><code>{{ hit.dataset_row_id }}</code></dd></div>
+    <div><dt>Matched id:</dt> <dd><code>{{ hit.key_type }} = {{ hit.key }}</code></dd></div>
+    {% if hit.start_s is not none %}<div><dt>Clip:</dt> <dd>{{ hit.start_s|int }}s to {{ hit.end_s|int }}s; {{ hit.urls.clip }}</dd></div>{% endif %}
+    {% if hit.extra.split %}<div><dt>Split:</dt> <dd>{{ hit.extra.split }}</dd></div>{% endif %}
+    {% if hit.extra.label_names %}<div><dt>Labels:</dt> <dd>{{ hit.extra.label_names|join(", ") }}</dd></div>{% endif %}
+    {% if hit.extra.caption %}<div><dt>Caption:</dt> <dd>{{ hit.extra.caption }}</dd></div>{% endif %}
+    {% if hit.artist or hit.title %}<div><dt>Listed as:</dt> <dd>{{ hit.artist or "?" }} – {{ hit.title or "?" }}</dd></div>{% endif %}
+    <div><dt>Video:</dt> <dd>{{ hit.urls.watch }}</dd></div>
+  </dl>
+</div>
+{% endfor %}
+{% endfor %}
+
+{% if report.hits or report.artists %}
+{% set first = (report.datasets.values()|list)[0] %}
+<h2>Context</h2>
+<p>{{ first.litigation_context.text }}</p>
+<p class="small">Sources, last reviewed {{ first.litigation_context.last_reviewed }}:</p>
+<ul class="small">{% for s in first.litigation_context.sources %}<li>{{ s.title }} ({{ s.date }}): {{ s.url }}</li>{% endfor %}</ul>
+<h2>What you can do</h2>
+{% for a in first.what_you_can_do %}
+<h3>{{ a.title }}</h3><p>{{ a.text }}</p>
+<ul class="small">{% for s in a.sources %}<li>{{ s.title }} ({{ s.date }}): {{ s.url }}</li>{% endfor %}</ul>
+{% endfor %}
+{% endif %}
+
+<h2>Dataset versions indexed</h2>
+<table><tr><th>Dataset</th><th>File</th><th>Rows</th><th>Loaded</th><th>SHA-256</th></tr>
+{% for name, files in report.dataset_versions.items() %}{% for f in files %}
+<tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{{ f.rows }}</td><td>{{ f.loaded_at }}</td><td>{% if f.sha256 %}<code>{{ f.sha256 }}</code>{% else %}<em>{{ f.status }}</em>{% endif %}</td></tr>
+{% endfor %}{% endfor %}</table>
+
+<p class="legal">{{ report.not_legal_advice }}</p>
+</body>
+</html>

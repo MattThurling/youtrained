@@ -1,0 +1,27 @@
+<article class="hit">
+  {% if hit.key_type == "youtube_video" %}
+  <button type="button" class="player" data-id="{{ hit.key }}"
+          {% if hit.start_s is not none %}data-start="{{ hit.start_s|int }}" data-end="{{ hit.end_s|int }}"{% endif %}
+          aria-label="Play {% if hit.start_s is not none %}the {{ (hit.end_s - hit.start_s)|int }}-second clip used{% else %}this video{% endif %}">
+    <img src="https://i.ytimg.com/vi/{{ hit.key }}/mqdefault.jpg" alt="" loading="lazy" width="320" height="180">
+    <span class="play">▶ {% if hit.start_s is not none %}{{ hit.start_s|int }}s–{{ hit.end_s|int }}s{% else %}Play{% endif %}</span>
+  </button>
+  {% endif %}
+  <div class="hit-body">
+  <h4>
+    {% if hit.your_title %}{{ hit.your_title }}{% else %}{{ hit.key }}{% endif %}
+    <span class="ds">{{ report.datasets[hit.dataset].name }}</span>
+  </h4>
+  <dl>
+    <dt>Dataset row</dt><dd><code>{{ hit.dataset_row_id }}</code></dd>
+    <dt>Matched id</dt><dd><code>{{ hit.key_type }} = {{ hit.key }}</code></dd>
+    {% if hit.start_s is not none %}<dt>Clip</dt><dd>{{ hit.start_s|int }}s to {{ hit.end_s|int }}s
+      {% if hit.urls.clip %}(<a href="{{ hit.urls.clip }}">open clip on YouTube</a>){% endif %}</dd>{% endif %}
+    {% if hit.extra.split %}<dt>Split</dt><dd>{{ hit.extra.split }}</dd>{% endif %}
+    {% if hit.extra.label_names %}<dt>Labels</dt><dd>{{ hit.extra.label_names|join(", ") }}</dd>{% endif %}
+    {% if hit.extra.caption %}<dt>Caption</dt><dd>{{ hit.extra.caption }}</dd>{% endif %}
+    {% if hit.artist or hit.title %}<dt>Listed as</dt><dd>{{ hit.artist or "?" }} – {{ hit.title or "?" }}{% if hit.extra.album_name %} ({{ hit.extra.album_name }}){% endif %}</dd>{% endif %}
+    {% if hit.urls.watch %}<dt>Video</dt><dd><a href="{{ hit.urls.watch }}">{{ hit.urls.watch }}</a></dd>{% endif %}
+  </dl>
+  </div>
+</article>

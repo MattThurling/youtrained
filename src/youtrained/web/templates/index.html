@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>Are your videos in a known AI training dataset?</h1>
+  <p>Paste your YouTube channel link. We list every video on the channel and check the ids against public research datasets used to train and evaluate music-generation models. Nothing is uploaded.</p>
+  <form method="post" action="/check" class="check">
+    <label for="youtube">YouTube channel link</label>
+    <input id="youtube" name="youtube" type="text" placeholder="https://www.youtube.com/@yourchannel" value="{{ youtube or '' }}" autofocus required>
+    <button type="submit">Check my channel</button>
+  </form>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <p class="small">Accepted forms: youtube.com/@handle, /channel/UC…, /c/name, /user/name, and your artist page on music.youtube.com/channel/UC…. Spotify artist links are coming next.</p>
+</section>
+<section class="datasets">
+  <h2>What we check against</h2>
+  <ul>
+    <li><strong>AudioSet</strong> (Google, 2017): about 1.08 million ten-second YouTube segments labelled as music.</li>
+    <li><strong>MusicCaps</strong> (Google, 2023): 5,521 ten-second clips with expert captions, the standard text-to-music benchmark.</li>
+    <li><strong>LAION-DISCO-12M</strong> (LAION, 2024): 12.3 million YouTube Music songs listed for training audio foundation models.</li>
+  </ul>
+</section>
+{% endblock %}

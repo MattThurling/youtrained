@@ -1,0 +1,31 @@
+name: MusicCaps
+publisher: Google Research
+year: 2023
+homepage: https://huggingface.co/datasets/google/MusicCaps
+licence:
+  name: CC-BY-SA-4.0
+  url: https://creativecommons.org/licenses/by-sa/4.0/
+key_types: [youtube_video]
+usage:
+  role: [evaluation]
+  cited_by:
+    - model: MusicLM (Google, 2023)
+      url: https://arxiv.org/abs/2301.11325
+      note: >
+        The MusicLM paper introduced MusicCaps as an evaluation benchmark of 5.5k
+        music-text pairs and released it publicly (arXiv, 26 January 2023).
+    - model: MusicGen (Meta, 2023)
+      url: https://arxiv.org/abs/2306.05284
+      note: >
+        The MusicGen paper states that for its main results it evaluates the proposed
+        method on the MusicCaps benchmark (arXiv, 8 June 2023).
+description: >
+  MusicCaps is a list of 5,521 ten-second excerpts of YouTube videos, each identified by
+  the video id and clip start and end times, paired with a free-text description written by
+  a musician and a list of musical aspects. Google Research published it in January 2023
+  alongside MusicLM. The dataset itself contains only identifiers and text, not audio; teams
+  that use it fetch the clips from YouTube themselves. It is the standard benchmark on which
+  text-to-music systems report their results, so a listed clip is likely to have been
+  downloaded and listened to by many research groups when measuring their models, and some
+  groups also fold benchmark clips into training data. All MusicCaps clips were drawn from
+  AudioSet, so a MusicCaps hit normally comes with an AudioSet hit.

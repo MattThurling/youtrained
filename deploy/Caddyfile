@@ -1,0 +1,5 @@
+# /etc/caddy/Caddyfile — TLS via Let's Encrypt, proxy to the app container.
+youtrained.com, www.youtrained.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:8080
+}

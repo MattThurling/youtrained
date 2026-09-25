@@ -1,0 +1,29 @@
+name: LAION-DISCO-12M
+publisher: LAION e.V.
+year: 2024
+homepage: https://huggingface.co/datasets/laion/LAION-DISCO-12M
+licence:
+  name: Apache-2.0 (metadata index; LAION states it is released for academic research)
+  url: https://www.apache.org/licenses/LICENSE-2.0
+key_types: [youtube_video]
+usage:
+  role: [training]
+  cited_by:
+    - model: Audio foundation models such as CLAP (LAION's stated intended use)
+      url: https://laion.ai/blog/laion-disco-12m/
+      note: >
+        LAION's release post (17 November 2024) says the dataset is meant to support
+        training audio foundation models such as CLAP and research in music information
+        retrieval, and advises against using it in its original form for end products.
+description: >
+  LAION-DISCO-12M is an index of 12,648,485 songs on YouTube Music, each identified by its
+  YouTube video id and paired with the song title, artist names and YouTube channel ids,
+  album name, play count and duration. LAION built it in November 2024 by starting from
+  artists on YouTube Music charts and genre playlists and recursively following the "Fans
+  might also like" links, reaching 250,516 artists. It is the public successor to DISCO-10M,
+  which has since been withdrawn from Hugging Face. The dataset contains no audio; it is a
+  list that lets a research group download the recordings from YouTube for training
+  general-purpose audio and music models. Because it was gathered by walking artist pages
+  rather than sampling random uploads, it covers official artist catalogues much more
+  densely than AudioSet or MusicCaps do, so a working musician on YouTube Music is likely
+  to find most of their releases listed here.

@@ -1,0 +1,95 @@
+# Shared text reused by every dataset descriptor. A dataset YAML may override any key.
+# Wording rules (YOUTRAINED_BRIEF.md): never "proof", "stolen", "Suno trained on this".
+# Every litigation or licensing claim carries a source URL and date.
+
+litigation_context:
+  last_reviewed: 2026-09-24
+  text: >
+    Presence in a public research dataset shows that a clip of your recording was listed
+    by academic or industry researchers as material for building or testing audio models.
+    It does not by itself show which commercial products, if any, used the clip.
+    The legal picture is moving. On 31 July 2026 the Regional Court of Munich I ruled in
+    GEMA's case against Suno (case 42 O 763/25) that reproducing works for training, holding
+    them in a model in retrievable form, and generating similar outputs can each infringe
+    copyright under German and EU law; the judgment is not final and can be appealed.
+    In the United States, Warner Music Group settled its claims against Suno on
+    25 November 2025 with a licensing deal, while the parallel claims by Universal and Sony
+    were still pending at that point. Since then BMG (12 August 2026) and Believe/TuneCore
+    (8 September 2026) have signed opt-in licensing deals with Suno.
+  sources:
+    - title: "DLA Piper: Creation of music with generative AI may be copyright infringement (GEMA v Suno, LG München I, 42 O 763/25)"
+      url: https://www.dlapiper.com/en/insights/publications/2026/08/creation-of-music-with-generative-ai-may-be-copyright-infringement
+      date: 2026-08-28
+    - title: "Music Business Worldwide: Warner Music Group settles with Suno, strikes first-of-its-kind deal"
+      url: https://www.musicbusinessworldwide.com/warner-music-group-settles-with-suno-strikes-first-of-its-kind-deal-with-ai-song-generator/
+      date: 2025-11-25
+    - title: "Music Ally: Suno signs another music licensing deal, with BMG"
+      url: https://musically.com/2026/08/12/suno-bmg-ai-music-licensing-deal/
+      date: 2026-08-12
+    - title: "Music Business Worldwide: Suno inks global deal with Believe"
+      url: https://www.musicbusinessworldwide.com/suno-inks-global-licensing-deal-with-believe/
+      date: 2026-09-08
+
+what_you_can_do:
+  - title: Register an opt-out with Spawning's Do Not Train registry
+    text: >
+      Spawning runs Have I Been Trained and the Do Not Train registry, which lets rights
+      holders record that their works should not be used for future training. Some model
+      developers, including Stability AI and Hugging Face, have said they honour it.
+      Compliance is voluntary, so an opt-out is a signal of intent rather than a
+      guarantee, and it applies to future training rather than datasets already published.
+    sources:
+      - title: "Spawning: Have I Been Trained is back"
+        url: https://spawning.substack.com/p/have-i-been-trained-is-back
+        date: 2024-02-13
+      - title: "Have I Been Trained"
+        url: https://haveibeentrained.com/
+        date: 2026-09-24
+  - title: "UK: raise it with PRS for Music"
+    text: >
+      PRS for Music's AI policy (Version 1, October 2025) says the society advocates for
+      licensing of any existing music used by AI developers, is evaluating enforcement
+      action against AI music apps, and has a Members' Council AI Working Group.
+      If you are a PRS member, send them your report and ask what collective action or
+      licensing route covers your works.
+    sources:
+      - title: "PRS for Music and Artificial Intelligence, Version 1 (October 2025)"
+        url: https://assets.eu.ctfassets.net/qxls7070rsly/47LYHN0JKgnYPD4Ssj2QQJ/2d0c4c9c8494fb40083638e0a1b1a67d/PRS_for_Music_and_Artificial_Intelligence_Policy.pdf
+        date: 2025-10-01
+      - title: "PRS for Music: AI and music copyright"
+        url: https://www.prsformusic.com/works/how-copyright-works/ai-and-music-copyright
+        date: 2026-09-24
+  - title: "Germany: GEMA is litigating and licensing on members' behalf"
+    text: >
+      GEMA sued Suno in January 2025 and obtained a first-instance judgment from the
+      Regional Court of Munich I on 31 July 2026 (not yet final). GEMA has also published
+      an AI Charter (November 2024) and a licensing model under which rights holders would
+      receive a share of AI providers' net income. GEMA members can ask the society how
+      the ruling and the licensing model apply to their repertoire.
+    sources:
+      - title: "GEMA: Suno AI and OpenAI, GEMA sues for fair compensation"
+        url: https://www.gema.de/en/news/ai-and-music/ai-lawsuit
+        date: 2025-01-21
+      - title: "DLA Piper: GEMA v Suno, Munich Regional Court judgment of 31 July 2026"
+        url: https://www.dlapiper.com/en/insights/publications/2026/08/creation-of-music-with-generative-ai-may-be-copyright-infringement
+        date: 2026-08-28
+      - title: "Music Business Worldwide: Germany's GEMA launches AI Charter"
+        url: https://www.musicbusinessworldwide.com/germanys-gema-launches-ai-charter-laying-out-legal-and-ethical-principles-for-artificial-intelligence-in-music/
+        date: 2024-11-05
+  - title: Check whether your label or distributor has an opt-in AI deal
+    text: >
+      Warner Music Group (25 November 2025), BMG (12 August 2026) and Believe/TuneCore
+      (8 September 2026) have each agreed licensing deals with Suno that are described as
+      opt-in for artists. The BMG agreement is reported to also cover past use of BMG
+      repertoire. If you release through one of these companies, you can ask them what
+      opting in or out means for you and whether any settlement money reaches artists.
+    sources:
+      - title: "Music Business Worldwide: Warner Music Group settles with Suno"
+        url: https://www.musicbusinessworldwide.com/warner-music-group-settles-with-suno-strikes-first-of-its-kind-deal-with-ai-song-generator/
+        date: 2025-11-25
+      - title: "Music Ally: Suno signs another music licensing deal, with BMG"
+        url: https://musically.com/2026/08/12/suno-bmg-ai-music-licensing-deal/
+        date: 2026-08-12
+      - title: "Music Business Worldwide: Suno inks global deal with Believe"
+        url: https://www.musicbusinessworldwide.com/suno-inks-global-licensing-deal-with-believe/
+        date: 2026-09-08

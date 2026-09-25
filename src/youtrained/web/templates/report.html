@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}{{ headline }} – YouTrained{% endblock %}
+{% block head %}
+  <meta property="og:title" content="{{ headline }}">
+  <meta property="og:description" content="{{ report.subject.title }} checked against {{ report.summary.datasets|length or 3 }} public AI research datasets with YouTrained.">
+  <meta property="og:image" content="{{ base_url }}/r/{{ report.report_id }}/og.png">
+  <meta property="og:url" content="{{ base_url }}/r/{{ report.report_id }}">
+  <meta name="twitter:card" content="summary_large_image">
+{% endblock %}
+{% block content %}
+<section class="summary">
+  <p class="subject"><a href="{{ report.subject.url }}">{{ report.subject.title }}</a></p>
+  <h1>{{ headline }}</h1>
+  <p class="meta">{{ report.summary.checked }} videos checked, {{ report.summary.hit_count }} dataset rows matched. Checked {{ report.created_at }} with YouTrained v{{ report.tool_version }}.</p>
+  <p class="actions">
+    <a class="btn" href="/r/{{ report.report_id }}.json">Download JSON</a>
+    <a class="btn" href="/r/{{ report.report_id }}.pdf">Download evidence PDF</a>
+    <a class="btn secondary" href="/">Check another channel</a>
+  </p>
+  <p class="small">Share this page: <code>{{ base_url }}/r/{{ report.report_id }}</code></p>
+</section>
+
+{% if report.artists %}
+<section class="dataset artists">
+  <h2>Listed under your artist name <span class="count">{{ report.summary.artist_songs }} songs in LAION-DISCO-12M</span></h2>
+  <p class="desc">{{ report.datasets.laion_disco_12m.description }}</p>
+  {% for a in report.artists %}
+  <article class="artist">
+    <h3>{{ a.name or a.artist_id }} <span class="count">{{ a.song_count }} songs</span></h3>
+    <p class="small">
+      {% if a.basis == "artist_id" %}Matched exactly: this channel id is the YouTube Music artist id the dataset lists these songs under.{% else %}Probable match by artist name. If this is not you, ignore this section.{% endif %}
+      <a href="{{ a.url }}">Artist page on YouTube Music</a>.
+    </p>
+    <div class="hits">
+      {% for hit in a.songs %}{% include "_hit.html" %}{% endfor %}
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if report.hits %}
+{% for name, ds in report.datasets.items() if ds.hit_count %}
+<section class="dataset">
+  <h2>{{ ds.name }} <span class="count">{{ ds.matched_keys }} of your videos, {{ ds.hit_count }} rows</span></h2>
+  <p class="desc">{{ ds.description }}</p>
+  <p class="small">{{ ds.publisher }}, {{ ds.year }}. Licence: {{ ds.licence.name }}. Used for: {{ ds.usage.role|join(" and ") }}. <a href="{{ ds.homepage }}">Dataset page</a>.</p>
+  <div class="hits">
+    {% for hit in report.hits if hit.dataset == name %}{% include "_hit.html" %}{% endfor %}
+  </div>
+</section>
+{% endfor %}
+
+{% endif %}
+{% if report.hits or report.artists %}
+<section class="context">
+  <h2>What this means</h2>
+  {% set ctx = (report.datasets.values()|list)[0].litigation_context %}
+  <p>{{ ctx.text }}</p>
+  <p class="small">Sources (last reviewed {{ ctx.last_reviewed }}):</p>
+  <ul class="sources">{% for s in ctx.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
+</section>
+
+<section class="actions-list">
+  <h2>What you can do</h2>
+  {% for a in (report.datasets.values()|list)[0].what_you_can_do %}
+  <article>
+    <h3>{{ a.title }}</h3>
+    <p>{{ a.text }}</p>
+    <ul class="sources">{% for s in a.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
+  </article>
+  {% endfor %}
+</section>
+{% elif not report.artists %}
+<section class="none">
+  <h2>No matches</h2>
+  <p>None of the {{ report.summary.checked }} video ids on this channel appear in the datasets we index. That covers only these datasets and only this channel's own uploads; re-uploads of your music by other channels are not checked in this version.</p>
+</section>
+{% endif %}
+
+<section class="provenance">
+  <h2>Provenance</h2>
+  <p class="small">JSON export SHA-256: <code>{{ sha256 }}</code></p>
+  <details><summary>Dataset versions indexed</summary>
+    <table>
+      <tr><th>Dataset</th><th>File</th><th>Rows</th><th>Loaded</th><th>SHA-256</th></tr>
+      {% for name, files in report.dataset_versions.items() %}{% for f in files %}
+      <tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{{ f.rows }}</td><td>{{ f.loaded_at }}</td><td>{% if f.sha256 %}<code>{{ f.sha256[:16] }}…</code>{% else %}<em>{{ f.status }}</em>{% endif %}</td></tr>
+      {% endfor %}{% endfor %}
+    </table>
+  </details>
+  <p class="legal">{{ report.not_legal_advice }}</p>
+</section>
+<script>
+// Thumbnails become players only on click, so the page stays light and YouTube sets no
+// cookies until the visitor asks to hear a clip. Playback is bounded to the dataset's window.
+document.addEventListener("click", function (ev) {
+  var btn = ev.target.closest("button.player");
+  if (!btn) return;
+  var src = "https://www.youtube-nocookie.com/embed/" + btn.dataset.id + "?autoplay=1&rel=0";
+  if (btn.dataset.start) src += "&start=" + btn.dataset.start + "&end=" + btn.dataset.end;
+  var frame = document.createElement("iframe");
+  frame.src = src; frame.width = 320; frame.height = 180; frame.allow = "autoplay; encrypted-media";
+  frame.allowFullscreen = true; frame.title = btn.getAttribute("aria-label");
+  btn.replaceWith(frame);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+[
+ {
+  "id": "/m/04rlf",
+  "name": "Music",
+  "child_ids": [
+   "/m/04szw",
+   "/m/0kpv1t"
+  ]
+ },
+ {
+  "id": "/m/04szw",
+  "name": "Musical instrument",
+  "child_ids": [
+   "/m/0342h"
+  ]
+ },
+ {
+  "id": "/m/0342h",
+  "name": "Guitar",
+  "child_ids": []
+ },
+ {
+  "id": "/m/0kpv1t",
+  "name": "Music genre",
+  "child_ids": [
+   "/m/064t9"
+  ]
+ },
+ {
+  "id": "/m/064t9",
+  "name": "Pop music",
+  "child_ids": []
+ },
+ {
+  "id": "/m/09x0r",
+  "name": "Speech",
+  "child_ids": []
+ },
+ {
+  "id": "/m/0k4j",
+  "name": "Car",
+  "child_ids": []
+ },
+ {
+  "id": "/m/07yv9",
+  "name": "Vehicle",
+  "child_ids": [
+   "/m/0k4j"
+  ]
+ }
+]

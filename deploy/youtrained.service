@@ -1,0 +1,23 @@
+# /etc/systemd/system/youtrained.service — runs the app container from GHCR.
+[Unit]
+Description=YouTrained web app
+After=docker.service
+Requires=docker.service
+
+[Service]
+Restart=always
+RestartSec=5
+EnvironmentFile=/opt/youtrained/.env
+ExecStartPre=-/usr/bin/docker stop youtrained
+ExecStartPre=-/usr/bin/docker rm youtrained
+ExecStartPre=/usr/bin/docker pull ghcr.io/${IMAGE_REPO}:latest
+ExecStart=/usr/bin/docker run --name youtrained --rm \
+  -p 127.0.0.1:8080:8080 \
+  -v /opt/youtrained/data:/data \
+  --env-file /opt/youtrained/.env \
+  --memory=700m \
+  ghcr.io/${IMAGE_REPO}:latest
+ExecStop=/usr/bin/docker stop youtrained
+
+[Install]
+WantedBy=multi-user.target
