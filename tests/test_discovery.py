@@ -15,7 +15,7 @@ from youtrained.platforms import StaticYouTubeClient, Video, YouTubeApiClient
 from youtrained.urls import ChannelRef
 from youtrained.web import create_app
 
-BIG = "UCbig000000000000000000"  # owns the shared segment and several fixture videos
+BIG = "UCbig0000000000000000000"  # owns the shared segment and several fixture videos
 
 
 @pytest.fixture
