@@ -6,7 +6,7 @@
   <title>{% block title %}YouTrained{% endblock %}</title>
   {% if noindex %}<meta name="robots" content="noindex">{% endif %}
   {% block head %}{% endblock %}
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v={{ static_v }}">
   {% if ga_id %}
   <script>
     // Consent Mode: denied by default, so GA sets no cookies and no banner is needed (UK PECR).

@@ -48,7 +48,6 @@ footer.site { margin-top: 48px; padding-bottom: 40px; color: var(--muted); font-
 .pager { display: flex; gap: 16px; align-items: center; justify-content: center; margin: 20px 0; }
 @media (max-width: 600px) { .video { grid-template-columns: 1fr; } .video img { width: 100%; height: auto; } }
 form.inline { margin: 10px 0; } form.inline button { font: inherit; font-weight: 700; padding: 9px 14px; border: 2px solid var(--accent); border-radius: 8px; background: var(--accent); color: #141418; cursor: pointer; }
-@media (max-width: 600px) { header.site { flex-wrap: wrap; } 
 /* --- navigation --- */
 header.site { align-items: center; }
 nav.main { display: flex; gap: 4px; margin-left: auto; }

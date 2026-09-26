@@ -51,6 +51,17 @@ from ..urls import UnsupportedUrl, parse_youtube_channel_url
 
 HERE = Path(__file__).parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
+
+
+def _static_version() -> str:
+    """Short content hash of the stylesheet, used as a cache-busting query string."""
+    import hashlib
+
+    css = HERE / "static" / "style.css"
+    return hashlib.sha256(css.read_bytes()).hexdigest()[:10] if css.exists() else "0"
+
+
+STATIC_VERSION = _static_version()
 LABEL_PAGE_SIZE = 50
 PAGE_SIZE = 50
 SITEMAP_CHUNK = 50_000
@@ -106,6 +117,7 @@ def create_app(
                 "version": __version__,
                 "ga_id": config.ga_measurement_id(),
                 "presence_note": config.PRESENCE_NOTE,
+                "static_v": STATIC_VERSION,
                 **ctx,
             },
             status_code=status,

@@ -55,6 +55,7 @@ def test_index_renders_form(client):
     r = client.get("/")
     assert r.status_code == 200
     assert 'name="youtube"' in r.text and "LAION-DISCO-12M" in r.text
+    assert 'href="/static/style.css?v=' in r.text, "stylesheet link is cache-busted"
     assert client.get("/static/style.css").status_code == 200
 
 
