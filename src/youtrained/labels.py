@@ -111,6 +111,7 @@ def build_video_labels(
             inserted += _flush(conn, "video_labels", batch)
             log(f"video_labels: {seen:,} rows scanned, {inserted:,} pairs inserted")
     inserted += _flush(conn, "video_labels", batch)
+    refresh_label_stats(conn)
     if unknown_mids:
         log(f"video_labels: {unknown:,} label refs to {len(unknown_mids)} MIDs not in the ontology")
     log(f"video_labels: done, {seen:,} rows scanned, {inserted:,} new pairs")
@@ -338,9 +339,23 @@ def breadcrumb(conn: sqlite3.Connection, label: Label) -> list[Label]:
     return list(reversed(chain))
 
 
+def refresh_label_stats(conn: sqlite3.Connection) -> dict[int, int]:
+    """Recount videos per label into `label_stats` (one covering-index scan, done at index time)."""
+    counts = dict(conn.execute("SELECT label_id, COUNT(*) FROM video_labels GROUP BY label_id"))
+    with conn:
+        conn.execute("DELETE FROM label_stats")
+        conn.executemany(
+            "INSERT INTO label_stats(label_id, direct_count) VALUES (?,?)", list(counts.items())
+        )
+    return counts
+
+
 def direct_counts(conn: sqlite3.Connection) -> dict[int, int]:
-    """{label_id: number of videos carrying it directly}. One covering-index scan."""
-    return dict(conn.execute("SELECT label_id, COUNT(*) FROM video_labels GROUP BY label_id"))
+    """{label_id: videos carrying it directly}, from `label_stats`; computed once if missing."""
+    counts = dict(conn.execute("SELECT label_id, direct_count FROM label_stats"))
+    if not counts and conn.execute("SELECT 1 FROM video_labels LIMIT 1").fetchone():
+        counts = refresh_label_stats(conn)
+    return counts
 
 
 def label_slugs(conn: sqlite3.Connection) -> dict[str, str]:

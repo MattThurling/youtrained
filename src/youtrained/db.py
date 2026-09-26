@@ -85,6 +85,10 @@ CREATE TABLE IF NOT EXISTS video_labels(
   PRIMARY KEY(video_id, label_id)
 );
 CREATE INDEX IF NOT EXISTS ix_video_labels_label ON video_labels(label_id, video_id);
+CREATE TABLE IF NOT EXISTS label_stats(
+  label_id INTEGER PRIMARY KEY,
+  direct_count INTEGER NOT NULL   -- videos carrying the label directly; refreshed by index-labels
+);
 CREATE TABLE IF NOT EXISTS tags(
   id INTEGER PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,     -- MusicCaps aspect, lowercased

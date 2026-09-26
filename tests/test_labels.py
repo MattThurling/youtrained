@@ -11,6 +11,7 @@ from youtrained.labels import (
     build_label_tables,
     build_tag_tables,
     build_video_labels,
+    direct_counts,
     label_by_name,
     label_by_slug,
     label_children,
@@ -177,3 +178,15 @@ def test_real_ontology_shape_roundtrip(tmp_path, conn, cache_dir):
         "same-name",
         "same-name-2",
     ]
+
+
+def test_label_stats_stored_at_index_time_and_self_heal(labelled):
+    jazz = label_by_name(labelled, "Jazz").id
+    guitar = label_by_name(labelled, "Guitar").id
+    stored = dict(labelled.execute("SELECT label_id, direct_count FROM label_stats"))
+    assert stored[jazz] == 2 and stored[guitar] == 2
+    assert direct_counts(labelled) == stored
+    labelled.execute("DELETE FROM label_stats")
+    labelled.commit()
+    assert direct_counts(labelled) == stored, "recomputed and stored when missing"
+    assert labelled.execute("SELECT COUNT(*) FROM label_stats").fetchone()[0] == len(stored)

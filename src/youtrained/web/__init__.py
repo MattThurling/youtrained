@@ -33,7 +33,7 @@ HERE = Path(__file__).parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
 LABEL_PAGE_SIZE = 50
 NOINDEX_BELOW = 5  # label pages with fewer videos are noindex (thin content)
-_CACHE_TTL_S = 600
+_CACHE_TTL_S = 3600
 
 
 class _Cached:
