@@ -8,14 +8,27 @@ from collections.abc import Callable
 from pathlib import Path
 
 from fastapi import FastAPI, Form, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .. import __version__, config, db
 from .. import labels as L
-from ..artists import match_artists
+from ..artists import (
+    artist_by_id,
+    artists_above,
+    artists_page,
+    count_artists_above,
+    match_artists,
+)
 from ..check import run_check
+from ..descriptors import load_descriptor
 from ..og import render_og_png
 from ..pdf import PdfUnavailable, html_to_pdf
 from ..platforms import (
@@ -26,12 +39,21 @@ from ..platforms import (
     YouTubeApiClient,
     YouTubeClient,
 )
-from ..report import build_report, clip_urls, headline, report_json, report_sha256
+from ..report import (
+    build_report,
+    clip_urls,
+    headline,
+    prerendered_channel_report,
+    report_json,
+    report_sha256,
+)
 from ..urls import UnsupportedUrl, parse_youtube_channel_url
 
 HERE = Path(__file__).parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
 LABEL_PAGE_SIZE = 50
+PAGE_SIZE = 50
+SITEMAP_CHUNK = 50_000
 NOINDEX_BELOW = 5  # label pages with fewer videos are noindex (thin content)
 _CACHE_TTL_S = 3600
 
@@ -80,23 +102,206 @@ def create_app(
         return templates.TemplateResponse(
             request,
             name,
-            {"version": __version__, "ga_id": config.ga_measurement_id(), **ctx},
+            {
+                "version": __version__,
+                "ga_id": config.ga_measurement_id(),
+                "presence_note": config.PRESENCE_NOTE,
+                **ctx,
+            },
             status_code=status,
         )
 
     def load_report(report_id: str) -> dict:
+        """Stored report, or one pre-rendered from the channel mapping; 404 if neither/removed."""
         conn = connect()
         try:
+            if db.is_removed(conn, report_id):
+                raise HTTPException(404, "this page has been removed at the subject's request")
             report = db.get_report(conn, report_id)
+            if report is None and report_id.startswith("yt_UC"):
+                report = prerendered_channel_report(conn, report_id.removeprefix("yt_"))
         finally:
             conn.close()
         if report is None:
             raise HTTPException(404, "no such report")
         return report
 
+    def pages_for(total: int, per_page: int = PAGE_SIZE) -> int:
+        return max(1, -(-total // per_page))
+
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request):
         return render("index.html", request)
+
+    @app.get("/about", response_class=HTMLResponse)
+    def about(request: Request):
+        return render("about.html", request, contact_email=config.contact_email())
+
+    @app.get("/robots.txt", response_class=PlainTextResponse)
+    def robots(request: Request):
+        base = str(request.base_url).rstrip("/")
+        return f"User-agent: *\nAllow: /\nDisallow: /check\nSitemap: {base}/sitemap.xml\n"
+
+    # --- discovery: channels ---------------------------------------------------
+
+    @app.get("/channels", response_class=HTMLResponse)
+    def channels_index(
+        request: Request, q: str = Query("", max_length=100), page: int = Query(1, ge=1)
+    ):
+        conn = connect()
+        try:
+            rows, total = db.channels_page(conn, q=q.strip() or None, page=page, per_page=PAGE_SIZE)
+            removed = db.removed_ids(conn)
+        finally:
+            conn.close()
+        rows = [r for r in rows if f"yt_{r[0]}" not in removed]
+        return render(
+            "channels.html",
+            request,
+            rows=rows,
+            total=total,
+            q=q.strip(),
+            page=page,
+            pages=pages_for(total),
+            noindex=bool(q),
+        )
+
+    # --- discovery: artists ----------------------------------------------------
+
+    @app.get("/artists", response_class=HTMLResponse)
+    def artists_index(
+        request: Request, q: str = Query("", max_length=100), page: int = Query(1, ge=1)
+    ):
+        conn = connect()
+        try:
+            rows, total = artists_page(conn, q=q.strip() or None, page=page, per_page=PAGE_SIZE)
+            removed = db.removed_ids(conn)
+        finally:
+            conn.close()
+        rows = [r for r in rows if f"a_{r[0]}" not in removed]
+        return render(
+            "artists.html",
+            request,
+            rows=rows,
+            total=total,
+            q=q.strip(),
+            page=page,
+            pages=pages_for(total),
+            noindex=bool(q),
+        )
+
+    @app.get("/a/{artist_id}", response_class=HTMLResponse)
+    def artist_page(request: Request, artist_id: str, page: int = Query(1, ge=1)):
+        conn = connect()
+        try:
+            if db.is_removed(conn, f"a_{artist_id}"):
+                raise HTTPException(404, "this page has been removed at the subject's request")
+            artist = artist_by_id(conn, artist_id)
+            if artist is None:
+                raise HTTPException(404, "no such artist")
+            pages = pages_for(artist.song_count)
+            if page > pages:
+                raise HTTPException(404, "no such page")
+            ids = artist.song_ids[(page - 1) * PAGE_SIZE : page * PAGE_SIZE]
+            hits = [
+                {**h.to_dict(), "your_title": h.title, "urls": clip_urls(h), "basis": "artist_id"}
+                for h in db.find_hits(conn, "youtube_video", ids)
+                if h.dataset == "laion_disco_12m"
+            ]
+            desc = load_descriptor("laion_disco_12m")
+        finally:
+            conn.close()
+        return render(
+            "artist.html",
+            request,
+            artist=artist,
+            hits=hits,
+            page=page,
+            pages=pages,
+            dataset=desc,
+            noindex=artist.song_count < config.DISCOVERY_MIN,
+        )
+
+    # --- sitemaps ---------------------------------------------------------------
+
+    def _urlset(urls: list[str]) -> Response:
+        body = "".join(f"<url><loc>{u}</loc></url>" for u in urls)
+        return Response(
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>',
+            media_type="application/xml",
+        )
+
+    @app.get("/sitemap.xml")
+    def sitemap_index(request: Request):
+        base = str(request.base_url).rstrip("/")
+        conn = connect()
+        try:
+            n_channels = conn.execute(
+                "SELECT COUNT(*) FROM channel_stats WHERE video_count >= ?", (config.DISCOVERY_MIN,)
+            ).fetchone()[0]
+            n_artists = count_artists_above(conn, config.DISCOVERY_MIN)
+        finally:
+            conn.close()
+        parts = ["labels"]
+        parts += [f"channels-{i}" for i in range(pages_for(n_channels, SITEMAP_CHUNK))]
+        parts += [f"artists-{i}" for i in range(pages_for(n_artists, SITEMAP_CHUNK))]
+        body = "".join(f"<sitemap><loc>{base}/sitemap-{p}.xml</loc></sitemap>" for p in parts)
+        return Response(
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            f'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</sitemapindex>',
+            media_type="application/xml",
+        )
+
+    @app.get("/sitemap-labels.xml")
+    def sitemap_labels(request: Request):
+        base = str(request.base_url).rstrip("/")
+        conn = connect()
+        try:
+            counts = cache.get(conn).counts
+            slugs = [
+                s
+                for lid, s in conn.execute("SELECT id, slug FROM labels ORDER BY id")
+                if counts.get(lid, 0) >= config.DISCOVERY_MIN
+            ]
+        finally:
+            conn.close()
+        return _urlset([f"{base}/labels"] + [f"{base}/label/{s}" for s in slugs])
+
+    @app.get("/sitemap-channels-{n}.xml")
+    def sitemap_channels(request: Request, n: int):
+        base = str(request.base_url).rstrip("/")
+        conn = connect()
+        try:
+            ids = [
+                r[0]
+                for r in conn.execute(
+                    "SELECT channel_id FROM channel_stats WHERE video_count >= ? "
+                    "ORDER BY channel_id LIMIT ? OFFSET ?",
+                    (config.DISCOVERY_MIN, SITEMAP_CHUNK, n * SITEMAP_CHUNK),
+                )
+            ]
+            removed = db.removed_ids(conn)
+        finally:
+            conn.close()
+        if not ids and n > 0:
+            raise HTTPException(404)
+        return _urlset([f"{base}/r/yt_{c}" for c in ids if f"yt_{c}" not in removed])
+
+    @app.get("/sitemap-artists-{n}.xml")
+    def sitemap_artists(request: Request, n: int):
+        base = str(request.base_url).rstrip("/")
+        conn = connect()
+        try:
+            ids = artists_above(
+                conn, config.DISCOVERY_MIN, limit=SITEMAP_CHUNK, offset=n * SITEMAP_CHUNK
+            )
+            removed = db.removed_ids(conn)
+        finally:
+            conn.close()
+        if not ids and n > 0:
+            raise HTTPException(404)
+        return _urlset([f"{base}/a/{a}" for a in ids if f"a_{a}" not in removed])
 
     @app.post("/check")
     def check(request: Request, youtube: str = Form("")):
@@ -206,6 +411,8 @@ def create_app(
             sha256=report_sha256(report),
             base_url=str(request.base_url).rstrip("/"),
             label_slugs=slugs,
+            noindex=report["summary"]["matched_keys"] + report["summary"].get("artist_songs", 0)
+            < config.DISCOVERY_MIN,
         )
 
     # --- label pages ---------------------------------------------------------

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}About – YouTrained{% endblock %}
+{% block content %}
+<section>
+  <h1>About YouTrained</h1>
+  <p>YouTrained checks whether identifiers for your music appear in the public research datasets used to build and evaluate music-generation models. It is a pure lookup: the datasets are lists of YouTube video ids with labels or metadata, and we match ids against those lists. No audio is uploaded, downloaded, fingerprinted or analysed.</p>
+  <h2>What a result means</h2>
+  <p>{{ presence_note }} Each hit is stated as "present in dataset X, row Y" with the dataset's own metadata and a link to the exact clip. The datasets are AudioSet (Google, 2017), MusicCaps (Google, 2023) and LAION-DISCO-12M (LAION, 2024); their descriptions, licences and the litigation context are shown on every report with dated sources.</p>
+  <h2 id="removal">Removals</h2>
+  <p>Channel and artist pages are generated from the datasets, not from anything you submitted. If you are the subject of a page and want it taken down, {% if contact_email %}email <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>{% else %}open an issue on the project's GitHub repository{% endif %} with the page link. Removed pages return "not found" and are dropped from the site map. Removal here does not change the datasets themselves, which are published by their authors.</p>
+  <h2>Not legal advice</h2>
+  <p>Nothing on this site is legal advice. The "what you can do" section on each report links to registries, collecting societies and licensing news with sources and dates so you can check them yourself.</p>
+  <h2>Source</h2>
+  <p>The code is open: <a href="https://github.com/MattThurling/youtrained">github.com/MattThurling/youtrained</a>.</p>
+</section>
+{% endblock %}

@@ -149,3 +149,50 @@ def match_artists(
                 out.append(m)
                 seen.add(m.artist_id)
     return out
+
+
+def artists_page(
+    conn: sqlite3.Connection, *, q: str | None = None, page: int = 1, per_page: int = 50
+) -> tuple[list[tuple[str, str | None, int]], int]:
+    """(rows, total): (artist_id, name, song_count) ranked by songs, optional name prefix search."""
+    offset = max(page - 1, 0) * per_page
+    if q:
+        norm = normalize_name(q)
+        if not norm:
+            return [], 0
+        total = conn.execute(
+            "SELECT COUNT(DISTINCT artist_id) FROM artist_names WHERE name_norm LIKE ?",
+            (norm + "%",),
+        ).fetchone()[0]
+        rows = conn.execute(
+            "SELECT a.artist_id, a.name, a.song_count FROM artists a WHERE a.artist_id IN "
+            "(SELECT artist_id FROM artist_names WHERE name_norm LIKE ?) "
+            "ORDER BY a.song_count DESC, a.name LIMIT ? OFFSET ?",
+            (norm + "%", per_page, offset),
+        ).fetchall()
+        return rows, total
+    total = conn.execute("SELECT COUNT(*) FROM artists").fetchone()[0]
+    rows = conn.execute(
+        "SELECT artist_id, name, song_count FROM artists ORDER BY song_count DESC, name "
+        "LIMIT ? OFFSET ?",
+        (per_page, offset),
+    ).fetchall()
+    return rows, total
+
+
+def artists_above(
+    conn: sqlite3.Connection, min_songs: int, *, limit: int, offset: int
+) -> list[str]:
+    return [
+        r[0]
+        for r in conn.execute(
+            "SELECT artist_id FROM artists WHERE song_count >= ? ORDER BY artist_id LIMIT ? OFFSET ?",
+            (min_songs, limit, offset),
+        )
+    ]
+
+
+def count_artists_above(conn: sqlite3.Connection, min_songs: int) -> int:
+    return conn.execute(
+        "SELECT COUNT(*) FROM artists WHERE song_count >= ?", (min_songs,)
+    ).fetchone()[0]

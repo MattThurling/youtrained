@@ -53,7 +53,19 @@ def ga_measurement_id() -> str | None:
     return os.environ.get("GA_MEASUREMENT_ID") or None
 
 
+def contact_email() -> str | None:
+    """Shown on the About page for removal requests."""
+    load_dotenv()
+    return os.environ.get("CONTACT_EMAIL") or None
+
+
 PLATFORM_CACHE_TTL_S = 24 * 3600
+DISCOVERY_MIN = 5  # channels/artists/labels with fewer dataset items are noindex, not in sitemaps
+PRESENCE_NOTE = (
+    "These pages report where identifiers from public research datasets point. Presence in a "
+    "dataset is a fact about the dataset, not a claim about the channel or artist, and says "
+    "nothing about what any company did with the material."
+)
 
 NOT_LEGAL_ADVICE = (
     "This report is informational and is not legal advice. It shows that identifiers "

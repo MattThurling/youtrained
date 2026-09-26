@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ artist.name or artist.artist_id }} – songs in LAION-DISCO-12M – YouTrained{% endblock %}
+{% block content %}
+<section class="summary">
+  <p class="crumbs"><a href="/artists">Artists</a></p>
+  <h1>{{ "{:,}".format(artist.song_count) }} song{{ "" if artist.song_count == 1 else "s" }} by {{ artist.name or artist.artist_id }} appear in an AI training dataset</h1>
+  <p class="meta">Listed in LAION-DISCO-12M under YouTube Music artist id <code>{{ artist.artist_id }}</code>. <a href="https://music.youtube.com/channel/{{ artist.artist_id }}">Artist page on YouTube Music</a>.</p>
+  <p class="actions"><a class="btn" href="/">Check your own channel</a></p>
+</section>
+<section class="dataset">
+  <h2>{{ dataset.name }}</h2>
+  <p class="desc">{{ dataset.description }}</p>
+  <div class="hits">
+    {% set report = {"datasets": {"laion_disco_12m": {"name": dataset.name}}} %}
+    {% for hit in hits %}{% include "_hit.html" %}{% endfor %}
+  </div>
+  {% if pages > 1 %}
+  <nav class="pager">
+    {% if page > 1 %}<a href="/a/{{ artist.artist_id }}?page={{ page - 1 }}">‹ Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}<a href="/a/{{ artist.artist_id }}?page={{ page + 1 }}">Next ›</a>{% endif %}
+  </nav>
+  {% endif %}
+</section>
+<section class="provenance">
+  <p class="legal">{{ presence_note }} If you are this artist and want this page removed, see <a href="/about#removal">removals</a>.</p>
+</section>
+{% endblock %}

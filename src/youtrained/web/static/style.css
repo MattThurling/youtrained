@@ -49,3 +49,8 @@ footer.site { margin-top: 48px; padding-bottom: 40px; color: var(--muted); font-
 .video .title { font-weight: 600; }
 .pager { display: flex; gap: 16px; align-items: center; justify-content: center; margin: 20px 0; }
 @media (max-width: 600px) { .video { grid-template-columns: 1fr; } .video img { width: 100%; height: auto; } }
+nav.main { display: flex; gap: 16px; margin-left: auto; font-size: 15px; } nav.main a { color: var(--muted); text-decoration: none; } nav.main a:hover { color: var(--fg); }
+form.search { display: flex; gap: 8px; margin: 14px 0 18px; } form.search input { flex: 1; font: inherit; padding: 9px 12px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); } form.search button { font: inherit; font-weight: 700; padding: 9px 14px; border: 2px solid var(--accent); border-radius: 8px; background: var(--accent); color: #141418; cursor: pointer; }
+ol.ranked { padding-left: 40px; } ol.ranked li { padding: 4px 0; } ol.ranked .count { color: var(--muted); font-size: 14px; margin-left: 6px; }
+form.inline { margin: 10px 0; } form.inline button { font: inherit; font-weight: 700; padding: 9px 14px; border: 2px solid var(--accent); border-radius: 8px; background: var(--accent); color: #141418; cursor: pointer; }
+@media (max-width: 600px) { header.site { flex-wrap: wrap; } nav.main { margin-left: 0; width: 100%; gap: 12px; } }

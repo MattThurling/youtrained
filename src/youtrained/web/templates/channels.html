@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Channels in AI training datasets – YouTrained{% endblock %}
+{% block content %}
+<section>
+  <h1>Channels</h1>
+  <p>YouTube channels ranked by how many of their videos appear in AudioSet and MusicCaps. {{ "{:,}".format(total) }} channels{% if q %} match "{{ q }}"{% endif %}.</p>
+  <form method="get" action="/channels" class="search"><input type="search" name="q" value="{{ q }}" placeholder="Search channel names" aria-label="Search channel names"><button type="submit">Search</button></form>
+  <ol class="ranked" start="{{ (page - 1) * 50 + 1 }}">
+    {% for channel_id, title, n in rows %}
+    <li><a href="/r/yt_{{ channel_id }}">{{ title or channel_id }}</a> <span class="count">{{ "{:,}".format(n) }} video{{ "" if n == 1 else "s" }}</span></li>
+    {% endfor %}
+  </ol>
+  {% if pages > 1 %}
+  <nav class="pager">
+    {% if page > 1 %}<a href="/channels?page={{ page - 1 }}{% if q %}&q={{ q|urlencode }}{% endif %}">‹ Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ "{:,}".format(pages) }}</span>
+    {% if page < pages %}<a href="/channels?page={{ page + 1 }}{% if q %}&q={{ q|urlencode }}{% endif %}">Next ›</a>{% endif %}
+  </nav>
+  {% endif %}
+  <p class="small">{{ presence_note }}</p>
+</section>
+{% endblock %}

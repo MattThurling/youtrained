@@ -133,7 +133,43 @@ def headline(report: dict[str, Any]) -> str:
     artist_songs = s.get("artist_songs", 0)
     if s["matched_keys"] == 0 and artist_songs:
         return f"{artist_songs} songs under your artist name appear in an AI training dataset"
-    line = f"{s['matched_keys']} of your {s['checked']} {noun} appear in AI training datasets"
+    if not s.get("checked_known", True):
+        # Pre-rendered from the channel mapping: we know the dataset videos, not the channel total.
+        line = f"{s['matched_keys']} {noun} from this channel appear in AI training datasets"
+    else:
+        line = f"{s['matched_keys']} of your {s['checked']} {noun} appear in AI training datasets"
     if artist_songs:
         line += f", plus {artist_songs} songs under your artist name"
     return line
+
+
+def prerendered_channel_report(conn: sqlite3.Connection, channel_id: str) -> dict[str, Any] | None:
+    """A report built purely from the channel mapping, for channels nobody has submitted yet.
+
+    No API call, nothing stored. Returns None when the mapping knows nothing about the channel.
+    """
+    from .artists import match_artists  # local import: artists imports db, report imports artists
+
+    stat = db.channel_stat(conn, channel_id)
+    if stat is None:
+        return None
+    _, title, _ = stat
+    videos = db.videos_for_channel(conn, channel_id)
+    ids = [v for v, _ in videos]
+    result = CheckResult(
+        spotify_ids=[], youtube_ids=ids, hits=db.find_hits(conn, KEY_YOUTUBE_VIDEO, ids)
+    )
+    matches = match_artists(conn, channel_id=channel_id, names=[title] if title else [])
+    report = build_report(
+        conn,
+        result,
+        platform="yt",
+        subject_id=channel_id,
+        subject_title=title,
+        subject_url=f"https://www.youtube.com/channel/{channel_id}",
+        titles={v: t or "" for v, t in videos},
+        artist_matches=matches,
+    )
+    report["summary"]["checked_known"] = False
+    report["prerendered"] = True
+    return report

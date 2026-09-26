@@ -52,6 +52,17 @@ CREATE TABLE IF NOT EXISTS video_channels(
   fetched_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_video_channels_channel ON video_channels(channel_id);
+CREATE TABLE IF NOT EXISTS channel_stats(
+  channel_id TEXT PRIMARY KEY,
+  channel_title TEXT,
+  video_count INTEGER NOT NULL    -- mapped dataset videos owned by the channel
+);
+CREATE INDEX IF NOT EXISTS ix_channel_stats_count ON channel_stats(video_count DESC);
+CREATE TABLE IF NOT EXISTS removals(
+  subject_id TEXT PRIMARY KEY,    -- 'yt_<channel id>' or 'a_<artist id>'
+  reason TEXT,
+  created_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS map_queue(
   video_id TEXT PRIMARY KEY
 );
@@ -61,6 +72,7 @@ CREATE TABLE IF NOT EXISTS artists(
   song_count INTEGER NOT NULL,
   song_ids BLOB NOT NULL         -- concatenated 11-char YouTube ids
 );
+CREATE INDEX IF NOT EXISTS ix_artists_songs ON artists(song_count DESC);
 CREATE TABLE IF NOT EXISTS artist_names(
   name_norm TEXT NOT NULL,
   artist_id TEXT NOT NULL,
@@ -325,10 +337,77 @@ def videos_for_channel(conn: sqlite3.Connection, channel_id: str) -> list[tuple[
     ).fetchall()
 
 
+def refresh_channel_stats(conn: sqlite3.Connection) -> int:
+    """Recount mapped videos per channel into channel_stats. Run after map-channels."""
+    with conn:
+        conn.execute("DELETE FROM channel_stats")
+        conn.execute(
+            "INSERT INTO channel_stats(channel_id, channel_title, video_count) "
+            "SELECT channel_id, MAX(channel_title), COUNT(*) FROM video_channels "
+            "WHERE status = 'ok' AND channel_id IS NOT NULL GROUP BY channel_id"
+        )
+    return conn.execute("SELECT COUNT(*) FROM channel_stats").fetchone()[0]
+
+
 def top_channels(conn: sqlite3.Connection, limit: int = 50) -> list[tuple]:
     """Channels ranked by how many of their videos appear in the mapped datasets."""
+    if not conn.execute("SELECT 1 FROM channel_stats LIMIT 1").fetchone():
+        refresh_channel_stats(conn)
     return conn.execute(
-        "SELECT channel_id, channel_title, COUNT(*) AS n FROM video_channels "
-        "WHERE status = 'ok' GROUP BY channel_id ORDER BY n DESC, channel_title LIMIT ?",
+        "SELECT channel_id, channel_title, video_count FROM channel_stats "
+        "ORDER BY video_count DESC, channel_title LIMIT ?",
         (limit,),
     ).fetchall()
+
+
+def channels_page(
+    conn: sqlite3.Connection, *, q: str | None = None, page: int = 1, per_page: int = 50
+) -> tuple[list[tuple], int]:
+    """(rows, total) of channels ranked by mapped video count, optionally filtered by title."""
+    where, params = "", []
+    if q:
+        where = "WHERE channel_title LIKE ? COLLATE NOCASE"
+        params = [f"%{q}%"]
+    total = conn.execute(f"SELECT COUNT(*) FROM channel_stats {where}", params).fetchone()[0]
+    rows = conn.execute(
+        f"SELECT channel_id, channel_title, video_count FROM channel_stats {where} "
+        "ORDER BY video_count DESC, channel_title LIMIT ? OFFSET ?",
+        [*params, per_page, max(page - 1, 0) * per_page],
+    ).fetchall()
+    return rows, total
+
+
+def channel_stat(conn: sqlite3.Connection, channel_id: str) -> tuple | None:
+    return conn.execute(
+        "SELECT channel_id, channel_title, video_count FROM channel_stats WHERE channel_id = ?",
+        (channel_id,),
+    ).fetchone()
+
+
+# --- removals ---------------------------------------------------------------
+
+
+def is_removed(conn: sqlite3.Connection, subject_id: str) -> bool:
+    return (
+        conn.execute("SELECT 1 FROM removals WHERE subject_id = ?", (subject_id,)).fetchone()
+        is not None
+    )
+
+
+def add_removal(conn: sqlite3.Connection, subject_id: str, reason: str | None = None) -> None:
+    conn.execute(
+        "INSERT OR REPLACE INTO removals(subject_id, reason, created_at) VALUES (?,?,?)",
+        (subject_id, reason, datetime.now(UTC).isoformat(timespec="seconds")),
+    )
+    conn.commit()
+
+
+def drop_removal(conn: sqlite3.Connection, subject_id: str) -> bool:
+    before = conn.total_changes
+    conn.execute("DELETE FROM removals WHERE subject_id = ?", (subject_id,))
+    conn.commit()
+    return conn.total_changes > before
+
+
+def removed_ids(conn: sqlite3.Connection) -> set[str]:
+    return {r[0] for r in conn.execute("SELECT subject_id FROM removals")}

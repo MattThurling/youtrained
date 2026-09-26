@@ -11,7 +11,12 @@
 <section class="summary">
   <p class="subject"><a href="{{ report.subject.url }}">{{ report.subject.title }}</a></p>
   <h1>{{ headline }}</h1>
+  {% if report.prerendered %}
+  <p class="meta">Built from the dataset index: {{ report.summary.hit_count }} dataset rows point at {{ report.summary.matched_keys }} videos on this channel. The channel's other uploads have not been checked.</p>
+  <form method="post" action="/check" class="inline"><input type="hidden" name="youtube" value="https://www.youtube.com/channel/{{ report.subject.id }}"><button type="submit">Check the full channel</button> <span class="small">lists every upload via YouTube and adds artist matches</span></form>
+  {% else %}
   <p class="meta">{{ report.summary.checked }} videos checked, {{ report.summary.hit_count }} dataset rows matched. Checked {{ report.created_at }} with YouTrained v{{ report.tool_version }}.</p>
+  {% endif %}
   <p class="actions">
     <a class="btn" href="/r/{{ report.report_id }}.json">Download JSON</a>
     <a class="btn" href="/r/{{ report.report_id }}.pdf">Download evidence PDF</a>
@@ -32,7 +37,8 @@
       <a href="{{ a.url }}">Artist page on YouTube Music</a>.
     </p>
     <div class="hits">
-      {% for hit in a.songs %}{% include "_hit.html" %}{% endfor %}
+      {% for hit in a.songs[:300] %}{% include "_hit.html" %}{% endfor %}
+      {% if a.songs|length > 300 %}<p class="small">Showing 300 of {{ "{:,}".format(a.songs|length) }} songs. <a href="/a/{{ a.artist_id }}">See all on the artist page</a>.</p>{% endif %}
     </div>
   </article>
   {% endfor %}
@@ -46,7 +52,9 @@
   <p class="desc">{{ ds.description }}</p>
   <p class="small">{{ ds.publisher }}, {{ ds.year }}. Licence: {{ ds.licence.name }}. Used for: {{ ds.usage.role|join(" and ") }}. <a href="{{ ds.homepage }}">Dataset page</a>.</p>
   <div class="hits">
-    {% for hit in report.hits if hit.dataset == name %}{% include "_hit.html" %}{% endfor %}
+    {% set ns = namespace(shown=0) %}
+    {% for hit in report.hits if hit.dataset == name %}{% if ns.shown < 300 %}{% include "_hit.html" %}{% endif %}{% set ns.shown = ns.shown + 1 %}{% endfor %}
+    {% if ns.shown > 300 %}<p class="small">Showing 300 of {{ "{:,}".format(ns.shown) }} rows. The JSON and PDF downloads contain all of them.</p>{% endif %}
   </div>
 </section>
 {% endfor %}
@@ -89,7 +97,7 @@
       {% endfor %}{% endfor %}
     </table>
   </details>
-  <p class="legal">{{ report.not_legal_advice }}</p>
+  <p class="legal">{{ presence_note }} {{ report.not_legal_advice }} If you are the subject of this page and want it removed, see <a href="/about#removal">removals</a>.</p>
 </section>
 <script>
 // Thumbnails become players only on click, so the page stays light and YouTube sets no

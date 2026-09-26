@@ -167,6 +167,34 @@ def index_tags(db_path: Annotated[Path | None, typer.Option("--db")] = None) -> 
     typer.echo(f"{c['tags']:,} tags, {c['video_tags']:,} video-tag pairs")
 
 
+@app.command("index-channels")
+def index_channels(db_path: Annotated[Path | None, typer.Option("--db")] = None) -> None:
+    """Recount mapped videos per channel (run after map-channels completes)."""
+    conn = db.connect(db_path or config.db_path())
+    db.init_schema(conn)
+    typer.echo(f"{db.refresh_channel_stats(conn):,} channels with dataset videos")
+
+
+@app.command()
+def remove(
+    subject_id: Annotated[str, typer.Argument(help="yt_<channel id> or a_<artist id>")],
+    reason: Annotated[str | None, typer.Option()] = None,
+    undo: Annotated[bool, typer.Option(help="Restore a removed page.")] = False,
+    db_path: Annotated[Path | None, typer.Option("--db")] = None,
+) -> None:
+    """Hide a channel or artist page (404, out of sitemaps) on request; --undo restores it."""
+    conn = db.connect(db_path or config.db_path())
+    db.init_schema(conn)
+    if not subject_id.startswith(("yt_", "a_")):
+        _err("subject id must start with yt_ (channel) or a_ (artist)")
+        raise typer.Exit(2)
+    if undo:
+        typer.echo("restored" if db.drop_removal(conn, subject_id) else "was not removed")
+    else:
+        db.add_removal(conn, subject_id, reason)
+        typer.echo(f"removed {subject_id}")
+
+
 @app.command("top-channels")
 def top_channels_cmd(
     limit: Annotated[int, typer.Option()] = 50,
