@@ -7,7 +7,11 @@
   <form method="get" action="/channels" class="search"><input type="search" name="q" value="{{ q }}" placeholder="Search channel names" aria-label="Search channel names"><button type="submit">Search</button></form>
   <ol class="ranked" start="{{ (page - 1) * 50 + 1 }}">
     {% for channel_id, title, n in rows %}
-    <li><a href="/r/yt_{{ channel_id }}">{{ title or channel_id }}</a> <span class="count">{{ "{:,}".format(n) }} video{{ "" if n == 1 else "s" }}</span></li>
+    <li>
+      <span class="rank">{{ loop.index + (page - 1) * 50 }}</span>
+      <a class="name" href="/r/yt_{{ channel_id }}">{{ title or channel_id }}</a>
+      <span class="count">{{ "{:,}".format(n) }} video{{ "" if n == 1 else "s" }}</span>
+    </li>
     {% endfor %}
   </ol>
   {% if pages > 1 %}

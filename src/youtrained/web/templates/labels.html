@@ -7,7 +7,7 @@
   {% if not tree %}<p class="small">Label tables have not been built yet (<code>youtrained index-labels</code>).</p>{% endif %}
   <ul class="tree">
     {% for depth, label, n in tree %}
-    <li style="--depth: {{ depth }}"><a href="/label/{{ label.slug }}">{{ label.name }}</a> <span class="count">{{ "{:,}".format(n) }}</span></li>
+    <li style="--depth: {{ depth }}"><a class="name" href="/label/{{ label.slug }}">{{ label.name }}</a> <span class="count">{{ "{:,}".format(n) }} video{{ "" if n == 1 else "s" }}</span></li>
     {% endfor %}
   </ul>
 </section>

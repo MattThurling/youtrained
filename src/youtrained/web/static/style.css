@@ -40,8 +40,6 @@ footer.site { margin-top: 48px; padding-bottom: 40px; color: var(--muted); font-
 .hit iframe { width: 200px; aspect-ratio: 16 / 9; height: auto; border: 0; border-radius: 6px; }
 @media (max-width: 600px) { .hit { grid-template-columns: 1fr; } .player, .hit iframe { width: 100%; } }
 .artist { margin: 18px 0; } .artist h3 .count { font-weight: 400; color: var(--muted); font-size: 15px; margin-left: 6px; }
-.tree { list-style: none; padding: 0; } .tree li { padding: 3px 0 3px calc(var(--depth, 0) * 22px); }
-.tree .count, .children .count { color: var(--muted); font-size: 14px; margin-left: 4px; }
 .crumbs { color: var(--muted); font-size: 14px; margin: 22px 0 0; }
 .videos { display: grid; gap: 10px; margin-top: 18px; }
 .video { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; background: var(--card); border-radius: 6px; padding: 8px 10px; }
@@ -49,8 +47,29 @@ footer.site { margin-top: 48px; padding-bottom: 40px; color: var(--muted); font-
 .video .title { font-weight: 600; }
 .pager { display: flex; gap: 16px; align-items: center; justify-content: center; margin: 20px 0; }
 @media (max-width: 600px) { .video { grid-template-columns: 1fr; } .video img { width: 100%; height: auto; } }
-nav.main { display: flex; gap: 16px; margin-left: auto; font-size: 15px; } nav.main a { color: var(--muted); text-decoration: none; } nav.main a:hover { color: var(--fg); }
-form.search { display: flex; gap: 8px; margin: 14px 0 18px; } form.search input { flex: 1; font: inherit; padding: 9px 12px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); } form.search button { font: inherit; font-weight: 700; padding: 9px 14px; border: 2px solid var(--accent); border-radius: 8px; background: var(--accent); color: #141418; cursor: pointer; }
-ol.ranked { padding-left: 40px; } ol.ranked li { padding: 4px 0; } ol.ranked .count { color: var(--muted); font-size: 14px; margin-left: 6px; }
 form.inline { margin: 10px 0; } form.inline button { font: inherit; font-weight: 700; padding: 9px 14px; border: 2px solid var(--accent); border-radius: 8px; background: var(--accent); color: #141418; cursor: pointer; }
-@media (max-width: 600px) { header.site { flex-wrap: wrap; } nav.main { margin-left: 0; width: 100%; gap: 12px; } }
+@media (max-width: 600px) { header.site { flex-wrap: wrap; } 
+/* --- navigation --- */
+header.site { align-items: center; }
+nav.main { display: flex; gap: 4px; margin-left: auto; }
+nav.main a { color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 600; padding: 6px 11px; border-radius: 999px; border-bottom: 0; }
+nav.main a:hover { color: var(--fg); background: var(--card); }
+nav.main a[aria-current="page"] { color: #141418; background: var(--accent); }
+@media (max-width: 600px) { header.site { flex-wrap: wrap; } nav.main { margin-left: 0; width: 100%; gap: 2px; overflow-x: auto; } nav.main a { padding: 6px 9px; font-size: 14px; white-space: nowrap; } }
+
+/* --- search --- */
+form.search { display: flex; gap: 8px; margin: 14px 0 18px; }
+form.search input { flex: 1; min-width: 0; font: inherit; padding: 11px 14px; border: 2px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); }
+form.search input:focus { outline: none; border-color: var(--accent); }
+form.search button { font: inherit; font-weight: 700; padding: 11px 16px; border: 2px solid var(--accent); border-radius: 8px; background: var(--accent); color: #141418; cursor: pointer; }
+
+/* --- ranked lists and the label tree --- */
+ol.ranked, ul.tree { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+ol.ranked li, ul.tree li { display: flex; align-items: baseline; gap: 12px; padding: 10px 6px; border-bottom: 1px solid var(--line); }
+ol.ranked li:hover, ul.tree li:hover { background: var(--card); }
+ol.ranked .rank { flex: 0 0 2.6em; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 14px; }
+ol.ranked .name, ul.tree .name { flex: 1; min-width: 0; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+ol.ranked .name:hover, ul.tree .name:hover { text-decoration: underline; }
+ol.ranked .count, ul.tree .count, .children .count { flex: 0 0 auto; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+ul.tree li { padding-left: calc(6px + var(--depth, 0) * 22px); }
+ul.tree li[style*="--depth: 0"] .name, ul.tree li[style*="--depth: 1"] .name { font-size: 17px; }
