@@ -11,7 +11,8 @@ from youtrained.artists import build_artist_index
 from youtrained.loaders import LOADERS, run_loader
 from youtrained.loaders.audioset import iter_segments
 from youtrained.mapping import run_mapping
-from youtrained.platforms import StaticYouTubeClient, YouTubeApiClient
+from youtrained.platforms import StaticYouTubeClient, Video, YouTubeApiClient
+from youtrained.urls import ChannelRef
 from youtrained.web import create_app
 
 BIG = "UCbig000000000000000000"  # owns the shared segment and several fixture videos
@@ -67,7 +68,7 @@ def client(db_path):
     return TestClient(create_app(db_path, youtube_client=lambda conn: StaticYouTubeClient({})))
 
 
-def test_prerendered_channel_report_from_mapping(client, shared_id):
+def test_prerendered_channel_report_from_mapping(client, shared_id, db_path):
     r = client.get(f"/r/yt_{BIG}")
     assert r.status_code == 200
     assert "6 videos from this channel appear in AI training datasets" in r.text
@@ -76,6 +77,21 @@ def test_prerendered_channel_report_from_mapping(client, shared_id):
     assert '<meta name="robots" content="noindex">' not in r.text, "6 videos is above the threshold"
     j = client.get(f"/r/yt_{BIG}.json").json()
     assert j["prerendered"] is True and j["summary"]["checked_known"] is False
+    conn = db.connect(db_path)
+    stored = db.get_report(conn, f"yt_{BIG}")
+    conn.close()
+    assert stored and stored["prerendered"] is True, "first render is stored for next time"
+    # a live check of the same channel replaces the pre-rendered report
+    live_client = TestClient(
+        create_app(
+            db_path,
+            youtube_client=lambda conn: StaticYouTubeClient(
+                {ChannelRef("id", BIG): [Video(shared_id, "Live title")]}
+            ),
+        )
+    )
+    live_client.post("/check", data={"youtube": f"https://www.youtube.com/channel/{BIG}"})
+    assert "Built from the dataset index" not in client.get(f"/r/yt_{BIG}").text
     assert client.get("/r/yt_UCnotmapped000000000000").status_code == 404
     small = client.get("/channels").text
     assert "Small " in small

@@ -120,6 +120,9 @@ def create_app(
             report = db.get_report(conn, report_id)
             if report is None and report_id.startswith("yt_UC"):
                 report = prerendered_channel_report(conn, report_id.removeprefix("yt_"))
+                if report is not None:
+                    # Store it: the next visit (or crawler) reads one row instead of rebuilding.
+                    db.save_report(conn, report)
         finally:
             conn.close()
         if report is None:
