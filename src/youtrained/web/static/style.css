@@ -40,3 +40,12 @@ footer.site { margin-top: 48px; padding-bottom: 40px; color: var(--muted); font-
 .hit iframe { width: 200px; aspect-ratio: 16 / 9; height: auto; border: 0; border-radius: 6px; }
 @media (max-width: 600px) { .hit { grid-template-columns: 1fr; } .player, .hit iframe { width: 100%; } }
 .artist { margin: 18px 0; } .artist h3 .count { font-weight: 400; color: var(--muted); font-size: 15px; margin-left: 6px; }
+.tree { list-style: none; padding: 0; } .tree li { padding: 3px 0 3px calc(var(--depth, 0) * 22px); }
+.tree .count, .children .count { color: var(--muted); font-size: 14px; margin-left: 4px; }
+.crumbs { color: var(--muted); font-size: 14px; margin: 22px 0 0; }
+.videos { display: grid; gap: 10px; margin-top: 18px; }
+.video { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; background: var(--card); border-radius: 6px; padding: 8px 10px; }
+.video img { display: block; width: 160px; height: 90px; object-fit: cover; border-radius: 4px; }
+.video .title { font-weight: 600; }
+.pager { display: flex; gap: 16px; align-items: center; justify-content: center; margin: 20px 0; }
+@media (max-width: 600px) { .video { grid-template-columns: 1fr; } .video img { width: 100%; height: auto; } }

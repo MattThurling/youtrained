@@ -11,7 +11,15 @@ from youtrained.loaders.audioset import AudioSetLoader, iter_segments, music_lab
 def test_music_label_ids_is_music_subtree():
     ontology = json.loads((FIXTURES / "ontology.json").read_text())
     ids = music_label_ids(ontology)
-    assert ids == {"/m/04rlf", "/m/04szw", "/m/0342h", "/m/0kpv1t", "/m/064t9"}
+    assert ids == {
+        "/m/04rlf",
+        "/m/04szw",
+        "/m/0342h",
+        "/m/0kpv1t",
+        "/m/064t9",
+        "/m/03_d0",
+        "/t/test01",
+    }
 
 
 def test_iter_segments_skips_comments_and_parses_quoted_labels():

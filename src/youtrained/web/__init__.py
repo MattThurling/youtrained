@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import sqlite3
+import time
 from collections.abc import Callable
 from pathlib import Path
 
-from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .. import __version__, config, db
+from .. import labels as L
 from ..artists import match_artists
 from ..check import run_check
 from ..og import render_og_png
@@ -24,11 +26,33 @@ from ..platforms import (
     YouTubeApiClient,
     YouTubeClient,
 )
-from ..report import build_report, headline, report_json, report_sha256
+from ..report import build_report, clip_urls, headline, report_json, report_sha256
 from ..urls import UnsupportedUrl, parse_youtube_channel_url
 
 HERE = Path(__file__).parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
+LABEL_PAGE_SIZE = 50
+NOINDEX_BELOW = 5  # label pages with fewer videos are noindex (thin content)
+_CACHE_TTL_S = 600
+
+
+class _Cached:
+    """Per-process cache of the label slug map and direct counts (one index scan each)."""
+
+    def __init__(self) -> None:
+        self.at = 0.0
+        self.slugs: dict[str, str] = {}
+        self.counts: dict[int, int] = {}
+
+    def get(self, conn: sqlite3.Connection) -> _Cached:
+        if time.monotonic() - self.at > _CACHE_TTL_S:
+            self.slugs = L.label_slugs(conn)
+            self.counts = L.direct_counts(conn)
+            self.at = time.monotonic()
+        return self
+
+    def invalidate(self) -> None:
+        self.at = 0.0
 
 
 def default_youtube_client(conn: sqlite3.Connection) -> YouTubeClient:
@@ -43,6 +67,9 @@ def create_app(
     app = FastAPI(title="YouTrained", version=__version__, docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
     path = db_path or config.db_path()
+
+    cache = _Cached()
+    app.state.label_cache = cache
 
     def connect() -> sqlite3.Connection:
         conn = db.connect(path)
@@ -166,6 +193,11 @@ def create_app(
     @app.get("/r/{report_id}", response_class=HTMLResponse)
     def report_page(request: Request, report_id: str):
         report = load_report(report_id)
+        conn = connect()
+        try:
+            slugs = cache.get(conn).slugs
+        finally:
+            conn.close()
         return render(
             "report.html",
             request,
@@ -173,6 +205,86 @@ def create_app(
             headline=headline(report),
             sha256=report_sha256(report),
             base_url=str(request.base_url).rstrip("/"),
+            label_slugs=slugs,
+        )
+
+    # --- label pages ---------------------------------------------------------
+
+    @app.get("/labels", response_class=HTMLResponse)
+    def labels_index(request: Request):
+        conn = connect()
+        try:
+            counts = cache.get(conn).counts
+            root = L.label_by_name(conn, "Music")
+            tree = []
+            if root is not None:
+
+                def walk(label: L.Label, depth: int, seen: set[int]) -> None:
+                    if label.id in seen:
+                        return
+                    seen.add(label.id)
+                    sub = [c for c in L.label_children(conn, label.id)]
+                    if (
+                        counts.get(label.id, 0)
+                        or any(counts.get(c.id, 0) for c in sub)
+                        or depth == 0
+                    ):
+                        tree.append((depth, label, counts.get(label.id, 0)))
+                        for child in sub:
+                            walk(child, depth + 1, seen)
+
+                walk(root, 0, set())
+        finally:
+            conn.close()
+        return render("labels.html", request, tree=tree)
+
+    @app.get("/label/{slug}", response_class=HTMLResponse)
+    def label_page(
+        request: Request,
+        slug: str,
+        page: int = Query(1, ge=1),
+        subtree: int = Query(0, ge=0, le=1),
+    ):
+        conn = connect()
+        try:
+            label = L.label_by_slug(conn, slug)
+            if label is None:
+                raise HTTPException(404, "no such label")
+            counts = cache.get(conn).counts
+            total = L.label_video_count(conn, label.id, subtree=bool(subtree))
+            subtree_total = L.label_video_count(conn, label.id, subtree=True)
+            rows = L.label_videos_page(
+                conn, label.id, page=page, per_page=LABEL_PAGE_SIZE, subtree=bool(subtree)
+            )
+            clips = {}
+            if rows:
+                for h in db.find_hits(conn, "youtube_video", [r[0] for r in rows]):
+                    if h.dataset == "audioset" and h.key not in clips:
+                        clips[h.key] = clip_urls(h)
+            children = [(c, counts.get(c.id, 0)) for c in L.label_children(conn, label.id)]
+            crumbs = L.breadcrumb(conn, label)
+            parents = L.label_parents(conn, label.id)
+        finally:
+            conn.close()
+        pages = max(1, -(-total // LABEL_PAGE_SIZE))
+        if page > pages:
+            raise HTTPException(404, "no such page")
+        return render(
+            "label.html",
+            request,
+            label=label,
+            direct_total=counts.get(label.id, 0),
+            subtree_total=subtree_total,
+            total=total,
+            subtree=bool(subtree),
+            rows=rows,
+            clips=clips,
+            children=children,
+            crumbs=crumbs,
+            parents=parents,
+            page=page,
+            pages=pages,
+            noindex=total < NOINDEX_BELOW,
         )
 
     return app

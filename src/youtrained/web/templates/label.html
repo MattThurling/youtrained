@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ label.name }} – AudioSet videos – YouTrained{% endblock %}
+{% block head %}{% if noindex %}<meta name="robots" content="noindex">{% endif %}{% endblock %}
+{% block content %}
+<section>
+  <p class="crumbs"><a href="/labels">Labels</a>{% for c in crumbs %} › <a href="/label/{{ c.slug }}">{{ c.name }}</a>{% endfor %}</p>
+  <h1>{{ label.name }}</h1>
+  <p class="meta">AudioSet label <code>{{ label.mid }}</code>.
+    {{ "{:,}".format(direct_total) }} indexed video{{ "" if direct_total == 1 else "s" }} carry it directly{% if subtree_total != direct_total %}, {{ "{:,}".format(subtree_total) }} including its sub-labels{% endif %}.
+    {% if parents|length > 1 %}Also filed under {% for p in parents %}<a href="/label/{{ p.slug }}">{{ p.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}.{% endif %}
+  </p>
+  {% if subtree_total != direct_total %}
+  <p class="small">Showing: {% if subtree %}<strong>this label and its sub-labels</strong> · <a href="/label/{{ label.slug }}">this label only</a>{% else %}<strong>this label only</strong> · <a href="/label/{{ label.slug }}?subtree=1">include sub-labels</a>{% endif %}</p>
+  {% endif %}
+  {% if children %}
+  <p class="children">Sub-labels: {% for c, n in children %}<a href="/label/{{ c.slug }}">{{ c.name }}</a> <span class="count">{{ "{:,}".format(n) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+  {% endif %}
+</section>
+
+<section class="videos">
+  {% if not rows %}<p>No indexed videos carry this label.</p>{% endif %}
+  {% for vid, title, channel_id, channel_title in rows %}
+  <article class="video">
+    <a class="thumb" href="{{ clips[vid].watch if vid in clips else 'https://www.youtube.com/watch?v=' ~ vid }}"><img src="https://i.ytimg.com/vi/{{ vid }}/mqdefault.jpg" alt="" loading="lazy" width="160" height="90"></a>
+    <div>
+      <div class="title">{{ title or vid }}</div>
+      <div class="small">{% if channel_id %}<a href="/r/yt_{{ channel_id }}">{{ channel_title }}</a> · {% endif %}<code>{{ vid }}</code>{% if vid in clips and clips[vid].clip %} · <a href="{{ clips[vid].clip }}">play the clip used</a>{% endif %}</div>
+    </div>
+  </article>
+  {% endfor %}
+  {% if pages > 1 %}
+  <nav class="pager">
+    {% if page > 1 %}<a href="/label/{{ label.slug }}?page={{ page - 1 }}{% if subtree %}&subtree=1{% endif %}">‹ Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ "{:,}".format(pages) }}</span>
+    {% if page < pages %}<a href="/label/{{ label.slug }}?page={{ page + 1 }}{% if subtree %}&subtree=1{% endif %}">Next ›</a>{% endif %}
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}

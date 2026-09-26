@@ -37,9 +37,15 @@ def client(tmp_path, cache_dir, shared_id):
         ChannelRef("handle", "Artist 3"): [Video("yyyyyyyyyyy", "Nothing here")],
     }
     from youtrained.artists import build_artist_index
+    from youtrained.labels import build_label_tables, build_tag_tables, build_video_labels
 
     conn = db.connect(db_path)
     build_artist_index(conn, log=lambda _: None)
+    build_label_tables(
+        conn, cache_dir, ontology_path=FIXTURES / "ontology.json", log=lambda _: None
+    )
+    build_video_labels(conn, log=lambda _: None)
+    build_tag_tables(conn, log=lambda _: None)
     conn.close()
     app = create_app(db_path, youtube_client=lambda conn: StaticYouTubeClient(videos))
     return TestClient(app)
@@ -205,3 +211,29 @@ def test_ga_tag_only_when_configured(client, monkeypatch):
     page = client.get("/").text
     assert "gtag/js?id=G-TEST123" in page
     assert "'analytics_storage': 'denied'" in page, "consent denied by default"
+
+
+def test_labels_index_and_label_page(client, shared_id):
+    r = client.get("/labels")
+    assert r.status_code == 200 and 'href="/label/music"' in r.text and "Guitar" in r.text
+    r = client.get("/label/guitar")
+    assert r.status_code == 200
+    assert shared_id in r.text, "the shared fixture segment is labelled Guitar"
+    assert (
+        "play the clip used" in r.text
+        and "start=10&amp;end=20" in r.text
+        or "start=10&end=20" in r.text
+    )
+    assert '<meta name="robots" content="noindex">' in r.text, "fewer than 5 videos"
+    assert client.get("/label/nope").status_code == 404
+    assert client.get("/label/guitar?page=99").status_code == 404
+    r = client.get("/label/music?subtree=1")
+    assert r.status_code == 200 and "including its sub-labels" in r.text and shared_id in r.text
+    assert client.get("/label/music").status_code == 200
+
+
+def test_report_label_names_link_to_label_pages(client, shared_id):
+    client.post("/check", data={"youtube": "@someband"})
+    page = client.get("/r/yt_someband").text
+    assert '<a href="/label/guitar">Guitar</a>' in page
+    assert '<a href="/label/speech">Speech</a>' in page

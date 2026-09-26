@@ -4,7 +4,8 @@
   "name": "Music",
   "child_ids": [
    "/m/04szw",
-   "/m/0kpv1t"
+   "/m/0kpv1t",
+   "/t/test01"
   ]
  },
  {
@@ -23,7 +24,8 @@
   "id": "/m/0kpv1t",
   "name": "Music genre",
   "child_ids": [
-   "/m/064t9"
+   "/m/064t9",
+   "/m/03_d0"
   ]
  },
  {
@@ -46,6 +48,18 @@
   "name": "Vehicle",
   "child_ids": [
    "/m/0k4j"
+  ]
+ },
+ {
+  "id": "/m/03_d0",
+  "name": "Jazz",
+  "child_ids": []
+ },
+ {
+  "id": "/t/test01",
+  "name": "Vocal music",
+  "child_ids": [
+   "/m/03_d0"
   ]
  }
 ]

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}AudioSet music labels – YouTrained{% endblock %}
+{% block content %}
+<section>
+  <h1>AudioSet music labels</h1>
+  <p>Every ten-second AudioSet clip carries one or more labels from Google's sound ontology. This is the Music branch, with the number of indexed videos that carry each label directly. Open a label to see the videos.</p>
+  {% if not tree %}<p class="small">Label tables have not been built yet (<code>youtrained index-labels</code>).</p>{% endif %}
+  <ul class="tree">
+    {% for depth, label, n in tree %}
+    <li style="--depth: {{ depth }}"><a href="/label/{{ label.slug }}">{{ label.name }}</a> <span class="count">{{ "{:,}".format(n) }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

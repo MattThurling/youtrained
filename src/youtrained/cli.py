@@ -103,6 +103,13 @@ def status(db_path: Annotated[Path | None, typer.Option("--db")] = None) -> None
         f"channel mapping: {m['mapped']:,} mapped, {m['missing']:,} missing, "
         f"{m['queued']:,} queued ({state})"
     )
+    from .labels import label_counts
+
+    c = label_counts(conn)
+    typer.echo(
+        f"labels: {c['labels']:,} labels, {c['video_labels']:,} video-label pairs; "
+        f"tags: {c['tags']:,} tags, {c['video_tags']:,} video-tag pairs"
+    )
 
 
 @app.command("map-channels")
@@ -132,6 +139,32 @@ def index_artists(db_path: Annotated[Path | None, typer.Option("--db")] = None) 
     conn = db.connect(db_path or config.db_path())
     n = build_artist_index(conn, log=_err)
     typer.echo(f"indexed {n:,} artists")
+
+
+@app.command("index-labels")
+def index_labels(
+    db_path: Annotated[Path | None, typer.Option("--db")] = None,
+    cache: Annotated[Path | None, typer.Option("--cache")] = None,
+) -> None:
+    """Build the AudioSet label tables (ontology + video_labels) from loaded rows."""
+    from .labels import build_label_tables, build_video_labels, label_counts
+
+    conn = db.connect(db_path or config.db_path())
+    build_label_tables(conn, cache or config.cache_dir(), log=_err)
+    build_video_labels(conn, log=_err)
+    c = label_counts(conn)
+    typer.echo(f"{c['labels']:,} labels, {c['video_labels']:,} video-label pairs")
+
+
+@app.command("index-tags")
+def index_tags(db_path: Annotated[Path | None, typer.Option("--db")] = None) -> None:
+    """Build MusicCaps aspect tags (tags + video_tags) from loaded rows."""
+    from .labels import build_tag_tables, label_counts
+
+    conn = db.connect(db_path or config.db_path())
+    build_tag_tables(conn, log=_err)
+    c = label_counts(conn)
+    typer.echo(f"{c['tags']:,} tags, {c['video_tags']:,} video-tag pairs")
 
 
 @app.command("top-channels")

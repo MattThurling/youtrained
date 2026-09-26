@@ -66,6 +66,36 @@ CREATE TABLE IF NOT EXISTS artist_names(
   artist_id TEXT NOT NULL,
   PRIMARY KEY(name_norm, artist_id)
 );
+CREATE TABLE IF NOT EXISTS labels(
+  id INTEGER PRIMARY KEY,
+  mid TEXT UNIQUE NOT NULL,      -- AudioSet ontology id, e.g. /m/04rlf
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  parent_id INTEGER REFERENCES labels(id)   -- first parent; all parents in label_parents
+);
+CREATE INDEX IF NOT EXISTS ix_labels_slug ON labels(slug);
+CREATE TABLE IF NOT EXISTS label_parents(
+  label_id INTEGER NOT NULL,
+  parent_id INTEGER NOT NULL,
+  PRIMARY KEY(label_id, parent_id)
+);
+CREATE TABLE IF NOT EXISTS video_labels(
+  video_id TEXT NOT NULL,
+  label_id INTEGER NOT NULL,
+  PRIMARY KEY(video_id, label_id)
+);
+CREATE INDEX IF NOT EXISTS ix_video_labels_label ON video_labels(label_id, video_id);
+CREATE TABLE IF NOT EXISTS tags(
+  id INTEGER PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,     -- MusicCaps aspect, lowercased
+  slug TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS video_tags(
+  video_id TEXT NOT NULL,
+  tag_id INTEGER NOT NULL,
+  PRIMARY KEY(video_id, tag_id)
+);
+CREATE INDEX IF NOT EXISTS ix_video_tags_tag ON video_tags(tag_id, video_id);
 CREATE TABLE IF NOT EXISTS platform_cache(
   cache_key TEXT PRIMARY KEY,
   fetched_at REAL NOT NULL,
