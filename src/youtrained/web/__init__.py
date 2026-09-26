@@ -40,19 +40,19 @@ class _Cached:
     """Per-process cache of the label slug map and direct counts (one index scan each)."""
 
     def __init__(self) -> None:
-        self.at = 0.0
+        self.at: float | None = None  # None = never filled; monotonic() is small at boot
         self.slugs: dict[str, str] = {}
         self.counts: dict[int, int] = {}
 
     def get(self, conn: sqlite3.Connection) -> _Cached:
-        if time.monotonic() - self.at > _CACHE_TTL_S:
+        if self.at is None or time.monotonic() - self.at > _CACHE_TTL_S:
             self.slugs = L.label_slugs(conn)
             self.counts = L.direct_counts(conn)
             self.at = time.monotonic()
         return self
 
     def invalidate(self) -> None:
-        self.at = 0.0
+        self.at = None
 
 
 def default_youtube_client(conn: sqlite3.Connection) -> YouTubeClient:

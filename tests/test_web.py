@@ -237,3 +237,12 @@ def test_report_label_names_link_to_label_pages(client, shared_id):
     page = client.get("/r/yt_someband").text
     assert '<a href="/label/guitar">Guitar</a>' in page
     assert '<a href="/label/speech">Speech</a>' in page
+
+
+def test_label_cache_fills_even_when_monotonic_clock_is_small(client, monkeypatch):
+    """CI runners boot fresh: time.monotonic() can be below the cache TTL."""
+    from youtrained import web
+
+    monkeypatch.setattr(web.time, "monotonic", lambda: 5.0)
+    client.app.state.label_cache.invalidate()
+    assert 'href="/label/music"' in client.get("/labels").text
