@@ -20,6 +20,8 @@ usage:
       note: >
         MusicCaps, the text-to-music evaluation benchmark released with MusicLM, was
         built from ten-second AudioSet clips (arXiv, 26 January 2023).
+plain: >
+  A list of about a million ten-second YouTube clips, each labelled with the sounds in it, that Google published in 2017. Labs use it to train and test general audio and music models.
 description: >
   AudioSet is a list of about 2.08 million ten-second segments of YouTube videos, each
   identified by video id and start and end times and labelled by human annotators with one

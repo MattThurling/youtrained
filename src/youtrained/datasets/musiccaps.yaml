@@ -19,6 +19,8 @@ usage:
       note: >
         The MusicGen paper states that for its main results it evaluates the proposed
         method on the MusicCaps benchmark (arXiv, 8 June 2023).
+plain: >
+  A set of 5,521 ten-second music clips from YouTube, each with a written description, that Google published in 2023. It is the standard test set for text-to-music models.
 description: >
   MusicCaps is a list of 5,521 ten-second excerpts of YouTube videos, each identified by
   the video id and clip start and end times, paired with a free-text description written by

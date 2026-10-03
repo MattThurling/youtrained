@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Results for “{{ q }}” – YouTrained{% endblock %}
+{% block content %}
+<section>
+  <p class="crumbs"><a href="/">Check</a> › Results</p>
+  <h1>Is one of these you?</h1>
+  <p class="lede">Names matching “{{ q }}” in the datasets we index.</p>
+  {% if artists %}
+  <h2>Artists <span class="count">listed in LAION-DISCO-12M</span></h2>
+  <ol class="ranked">
+    {% for artist_id, name, n in artists %}
+    <li><span class="rank">·</span><a class="name" href="/a/{{ artist_id }}">{{ name or artist_id }}</a><span class="count">{{ "{:,}".format(n) }} song{{ "" if n == 1 else "s" }} listed</span></li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+  {% if channels %}
+  <h2>YouTube channels <span class="count">videos listed in AudioSet and MusicCaps</span></h2>
+  <ol class="ranked">
+    {% for channel_id, title, n in channels %}
+    <li><span class="rank">·</span><a class="name" href="/r/yt_{{ channel_id }}">{{ title or channel_id }}</a><span class="count">{{ "{:,}".format(n) }} video{{ "" if n == 1 else "s" }} listed</span></li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+  {% if not artists and not channels %}
+  <div class="none">
+    <h2>We couldn't find that name</h2>
+    <p>Nothing called “{{ q }}” appears in the datasets we index. That usually means your music isn't listed in them, which is good news.</p>
+    <p class="small">Two caveats: we index three public datasets, not every dataset that exists, and the datasets list artists under the name on YouTube Music, which may differ from the one you use.</p>
+  </div>
+  {% endif %}
+  <section class="alt-check">
+    <h2>Not you, or want the full picture?</h2>
+    <p>Paste your YouTube channel link and we'll check every upload on it.</p>
+    <form method="post" action="/check" class="check">
+      <label for="youtube" class="visually-hidden">YouTube channel link</label>
+      <input id="youtube" name="youtube" type="text" placeholder="https://www.youtube.com/@yourchannel">
+      <button type="submit">Check my channel</button>
+    </form>
+  </section>
+</section>
+{% endblock %}

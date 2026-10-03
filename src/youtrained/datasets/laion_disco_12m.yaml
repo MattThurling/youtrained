@@ -15,6 +15,8 @@ usage:
         LAION's release post (17 November 2024) says the dataset is meant to support
         training audio foundation models such as CLAP and research in music information
         retrieval, and advises against using it in its original form for end products.
+plain: >
+  A list of 12 million songs on YouTube Music, gathered by walking artist pages, that LAION published in 2024 for training general music models.
 description: >
   LAION-DISCO-12M is an index of 12,648,485 songs on YouTube Music, each identified by its
   YouTube video id and paired with the song title, artist names and YouTube channel ids,

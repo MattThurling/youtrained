@@ -11,19 +11,66 @@
 <section class="summary">
   <p class="subject"><a href="{{ report.subject.url }}">{{ report.subject.title }}</a></p>
   <h1>{{ headline }}</h1>
+  <p class="verdict">{{ verdict }}</p>
   {% if report.prerendered %}
-  <p class="meta">Built from the dataset index: {{ "{:,}".format(report.summary.hit_count) }} dataset rows point at {{ "{:,}".format(report.summary.matched_keys) }} videos on this channel. The channel's other uploads have not been checked.</p>
-  <form method="post" action="/check" class="inline"><input type="hidden" name="youtube" value="https://www.youtube.com/channel/{{ report.subject.id }}"><button type="submit">Check the full channel</button> <span class="small">lists every upload via YouTube and adds artist matches</span></form>
+  <p class="meta">This page was built from the datasets alone, so it only knows about videos they list. To check every upload on the channel:</p>
+  <form method="post" action="/check" class="inline"><input type="hidden" name="youtube" value="https://www.youtube.com/channel/{{ report.subject.id }}"><button type="submit">Check all my uploads</button></form>
   {% else %}
-  <p class="meta">{{ "{:,}".format(report.summary.checked) }} videos checked, {{ "{:,}".format(report.summary.hit_count) }} dataset rows matched. Checked {{ report.created_at[:10] }} with YouTrained v{{ report.tool_version }}.</p>
+  <p class="meta">{{ "{:,}".format(report.summary.checked) }} videos checked on {{ report.created_at[:10] }}.</p>
   {% endif %}
+</section>
+
+{% if cards %}
+<section class="overview">
+  <h2>What we found</h2>
+  <div class="cards">
+    {% for c in cards %}
+    <article class="card">
+      <h3>{{ c.found }} <span class="in">in {{ c.name }}</span></h3>
+      <p>{{ c.plain }}</p>
+      {% if c.examples %}<p class="small">Including {{ c.examples|join(", ") }}.</p>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="actions-list">
+  <h2>What you can do</h2>
+  {% for a in (report.datasets.values()|list)[0].what_you_can_do %}
+  <details class="action">
+    <summary><strong>{{ a.title }}</strong></summary>
+    <p>{{ a.text }}</p>
+    <ul class="sources">{% for s in a.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
+  </details>
+  {% endfor %}
+</section>
+
+<section class="context">
+  <h2>What this means</h2>
+  {% set ctx = (report.datasets.values()|list)[0].litigation_context %}
+  <p>{{ ctx.text }}</p>
+  <p class="small">Sources (last reviewed {{ ctx.last_reviewed }}):</p>
+  <ul class="sources">{% for s in ctx.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
+</section>
+{% else %}
+<section class="none">
+  <h2>No matches</h2>
+  <p>None of the {{ "{:,}".format(report.summary.checked) }} video ids on this channel appear in the datasets we index. That covers only these datasets and only this channel's own uploads; re-uploads of your music by other channels are not checked in this version.</p>
+</section>
+{% endif %}
+
+<section class="share">
   <p class="actions">
-    <a class="btn" href="/r/{{ report.report_id }}.json">Download JSON</a>
-    <a class="btn" href="/r/{{ report.report_id }}.pdf">Download evidence PDF</a>
-    <a class="btn secondary" href="/">Check another channel</a>
+    <a class="btn" href="/r/{{ report.report_id }}.pdf">Download the evidence (PDF)</a>
+    <a class="btn secondary" href="/r/{{ report.report_id }}.json">JSON</a>
+    <a class="btn secondary" href="/">Check another name</a>
   </p>
   <p class="small">Share this page: <code>{{ base_url }}/r/{{ report.report_id }}</code></p>
 </section>
+
+{% if report.hits or report.artists %}
+<details class="evidence" id="evidence">
+  <summary><h2>The evidence</h2><span class="small">every dataset row we matched, with links to the exact clips</span></summary>
 
 {% if report.artists %}
 <section class="dataset artists">
@@ -45,7 +92,6 @@
 </section>
 {% endif %}
 
-{% if report.hits %}
 {% for name, ds in report.datasets.items() if ds.hit_count %}
 <section class="dataset">
   <h2>{{ ds.name }} <span class="count">{{ "{:,}".format(ds.matched_keys) }} videos, {{ "{:,}".format(ds.hit_count) }} rows</span></h2>
@@ -58,32 +104,7 @@
   </div>
 </section>
 {% endfor %}
-
-{% endif %}
-{% if report.hits or report.artists %}
-<section class="context">
-  <h2>What this means</h2>
-  {% set ctx = (report.datasets.values()|list)[0].litigation_context %}
-  <p>{{ ctx.text }}</p>
-  <p class="small">Sources (last reviewed {{ ctx.last_reviewed }}):</p>
-  <ul class="sources">{% for s in ctx.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
-</section>
-
-<section class="actions-list">
-  <h2>What you can do</h2>
-  {% for a in (report.datasets.values()|list)[0].what_you_can_do %}
-  <article>
-    <h3>{{ a.title }}</h3>
-    <p>{{ a.text }}</p>
-    <ul class="sources">{% for s in a.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
-  </article>
-  {% endfor %}
-</section>
-{% elif not report.artists %}
-<section class="none">
-  <h2>No matches</h2>
-  <p>None of the {{ "{:,}".format(report.summary.checked) }} video ids on this channel appear in the datasets we index. That covers only these datasets and only this channel's own uploads; re-uploads of your music by other channels are not checked in this version.</p>
-</section>
+</details>
 {% endif %}
 
 <section class="provenance">

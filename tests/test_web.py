@@ -63,7 +63,7 @@ def test_bad_url_shows_error(client):
     r = client.post("/check", data={"youtube": "https://youtu.be/dQw4w9WgXcQ"})
     assert r.status_code == 400 and "channel link instead" in r.text
     r = client.post("/check", data={"youtube": ""})
-    assert r.status_code == 400 and "Paste your YouTube channel link" in r.text
+    assert r.status_code == 400 and "Type your artist or channel name" in r.text
 
 
 def test_unknown_channel_is_503(client):
@@ -246,3 +246,28 @@ def test_label_cache_fills_even_when_monotonic_clock_is_small(client, monkeypatc
     monkeypatch.setattr(web.time, "monotonic", lambda: 5.0)
     client.app.state.label_cache.invalidate()
     assert 'href="/label/music"' in client.get("/labels").text
+
+
+def test_report_overview_verdict_cards_and_collapsed_evidence(client, shared_id):
+    client.post("/check", data={"youtube": "@someband"})
+    page = client.get("/r/yt_someband").text
+    assert (
+        "Yes. 1 of your songs and 1 of your videos are listed in datasets used to train and test AI music models."
+        in page
+    )
+    assert "<h2>What we found</h2>" in page
+    assert "1 of your videos" in page and "1 of your song" in page
+    assert "Including Our guitar song." in page, "example titles come from the hits"
+    assert page.index("<h2>What you can do</h2>") < page.index('<article class="hit">'), (
+        "actions before evidence"
+    )
+    assert '<details class="evidence"' in page and page.index(
+        '<details class="evidence"'
+    ) < page.index('<article class="hit">')
+    assert "Download the evidence (PDF)" in page
+
+
+def test_no_match_verdict(client):
+    client.post("/check", data={"youtube": "@nobody"})
+    page = client.get("/r/yt_nobody").text
+    assert "We found nothing listed under this name." in page and "No matches" in page

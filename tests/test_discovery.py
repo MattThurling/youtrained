@@ -72,7 +72,7 @@ def test_prerendered_channel_report_from_mapping(client, shared_id, db_path):
     r = client.get(f"/r/yt_{BIG}")
     assert r.status_code == 200
     assert "Big Channel: 6 videos appear in AI training datasets" in r.text
-    assert "Built from the dataset index" in r.text and "Check the full channel" in r.text
+    assert "built from the datasets alone" in r.text and "Check all my uploads" in r.text
     assert f"Video {shared_id}" in r.text
     assert '<meta name="robots" content="noindex">' not in r.text, "6 videos is above the threshold"
     j = client.get(f"/r/yt_{BIG}.json").json()
@@ -91,7 +91,7 @@ def test_prerendered_channel_report_from_mapping(client, shared_id, db_path):
         )
     )
     live_client.post("/check", data={"youtube": f"https://www.youtube.com/channel/{BIG}"})
-    assert "Built from the dataset index" not in client.get(f"/r/yt_{BIG}").text
+    assert "built from the datasets alone" not in client.get(f"/r/yt_{BIG}").text
     assert client.get("/r/yt_UCnotmapped000000000000").status_code == 404
     small = client.get("/channels").text
     assert "Small " in small

@@ -4,9 +4,32 @@
 <section class="summary">
   <p class="crumbs"><a href="/artists">Artists</a></p>
   <h1>{{ "{:,}".format(artist.song_count) }} song{{ "" if artist.song_count == 1 else "s" }} by {{ artist.name or artist.artist_id }} appear in an AI training dataset</h1>
-  <p class="meta">Listed in LAION-DISCO-12M under YouTube Music artist id <code>{{ artist.artist_id }}</code>. <a href="https://music.youtube.com/channel/{{ artist.artist_id }}">Artist page on YouTube Music</a>.</p>
-  <p class="actions"><a class="btn" href="/">Check your own channel</a></p>
+  <p class="verdict">Yes. {{ "{:,}".format(artist.song_count) }} of your songs are listed in a dataset used to train AI music models.</p>
+  <p class="meta">Listed in LAION-DISCO-12M under the YouTube Music artist <a href="https://music.youtube.com/channel/{{ artist.artist_id }}">{{ artist.name or artist.artist_id }}</a>.</p>
 </section>
+<section class="overview">
+  <h2>What we found</h2>
+  <div class="cards">
+    <article class="card">
+      <h3>{{ "{:,}".format(artist.song_count) }} of your song{{ "" if artist.song_count == 1 else "s" }} <span class="in">in {{ dataset.name }}</span></h3>
+      <p>{{ dataset.plain or dataset.description }}</p>
+      {% set ex = hits[:3]|map(attribute="title")|select|list %}{% if ex %}<p class="small">Including {{ ex|join(", ") }}.</p>{% endif %}
+    </article>
+  </div>
+</section>
+<section class="actions-list">
+  <h2>What you can do</h2>
+  {% for a in dataset.what_you_can_do %}
+  <details class="action">
+    <summary><strong>{{ a.title }}</strong></summary>
+    <p>{{ a.text }}</p>
+    <ul class="sources">{% for s in a.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
+  </details>
+  {% endfor %}
+  <p class="actions"><a class="btn secondary" href="/">Check another name</a></p>
+</section>
+<details class="evidence" id="evidence" {% if page > 1 %}open{% endif %}>
+  <summary><h2>The evidence</h2><span class="small">every song the dataset lists under this artist</span></summary>
 <section class="dataset">
   <h2>{{ dataset.name }}</h2>
   <p class="desc">{{ dataset.description }}</p>
@@ -22,6 +45,7 @@
   </nav>
   {% endif %}
 </section>
+</details>
 <section class="provenance">
   <p class="legal">{{ presence_note }} If you are this artist and want this page removed, see <a href="/about#removal">removals</a>.</p>
 </section>

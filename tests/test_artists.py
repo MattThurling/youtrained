@@ -14,7 +14,7 @@ from youtrained.artists import (
 from youtrained.check import run_check
 from youtrained.loaders import LOADERS, run_loader
 from youtrained.loaders.audioset import iter_segments
-from youtrained.report import build_report, headline
+from youtrained.report import build_report, headline, overview_cards, verdict
 
 
 def _indexed(conn, cache_dir):
@@ -106,3 +106,53 @@ def test_cli_artist_option(tmp_path, cache_dir):
         cli.app, ["check", "--artist", "Some Band", "--db", str(db_path), "--json"]
     )
     assert '"basis": "artist_name"' in res.output
+
+
+def test_verdict_and_cards(conn, cache_dir):
+    _indexed(conn, cache_dir)
+    ms = match_artists(conn, names=["Artist 3"])
+    none = build_report(
+        conn,
+        run_check(conn, youtube_ids=["zzzzzzzzzzz"]),
+        platform="yt",
+        subject_id="UCx",
+        subject_title="x",
+    )
+    assert verdict(none).startswith("We found nothing listed")
+    assert overview_cards(none) == []
+    songs_only = build_report(
+        conn,
+        run_check(conn, youtube_ids=["zzzzzzzzzzz"]),
+        platform="yt",
+        subject_id="UCx",
+        subject_title="x",
+        artist_matches=ms,
+    )
+    assert (
+        verdict(songs_only)
+        == "Yes. 1 of your songs are listed in a dataset used to train AI music models."
+    )
+    [card] = overview_cards(songs_only)
+    assert (
+        card["dataset"] == "laion_disco_12m"
+        and card["found"] == "1 of your song"
+        and card["examples"] == ["Song 3"]
+    )
+    assert card["plain"].startswith("A list of 12 million songs")
+    shared = next(iter_segments(FIXTURES / "eval_segments.csv"))[0]
+    videos_only = build_report(
+        conn,
+        run_check(conn, youtube_ids=[shared]),
+        platform="yt",
+        subject_id="UCx",
+        subject_title="x",
+        titles={shared: "My clip"},
+    )
+    assert (
+        verdict(videos_only)
+        == "Yes. 1 of your videos are listed in datasets used to train and test AI models."
+    )
+    names = [c["dataset"] for c in overview_cards(videos_only)]
+    assert "audioset" in names and "laion_disco_12m" not in names, (
+        "LAION card only from artist matches"
+    )

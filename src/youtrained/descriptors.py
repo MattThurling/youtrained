@@ -62,6 +62,7 @@ class Descriptor(_Strict):
     key_types: list[str]
     usage: Usage
     description: str
+    plain: str | None = None  # one or two sentences in a musician's terms, for the overview cards
     litigation_context: LitigationContext
     what_you_can_do: list[Action]
 

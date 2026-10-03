@@ -6,6 +6,7 @@ import sqlite3
 import time
 from collections.abc import Callable
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import (
@@ -26,6 +27,7 @@ from ..artists import (
     artists_page,
     count_artists_above,
     match_artists,
+    normalize_name,
 )
 from ..check import run_check
 from ..descriptors import load_descriptor
@@ -43,9 +45,11 @@ from ..report import (
     build_report,
     clip_urls,
     headline,
+    overview_cards,
     prerendered_channel_report,
     report_json,
     report_sha256,
+    verdict,
 )
 from ..urls import UnsupportedUrl, parse_youtube_channel_url
 
@@ -155,7 +159,7 @@ def create_app(
     @app.get("/robots.txt", response_class=PlainTextResponse)
     def robots(request: Request):
         base = str(request.base_url).rstrip("/")
-        return f"User-agent: *\nAllow: /\nDisallow: /check\nSitemap: {base}/sitemap.xml\n"
+        return f"User-agent: *\nAllow: /\nDisallow: /check\nDisallow: /search\nSitemap: {base}/sitemap.xml\n"
 
     # --- discovery: channels ---------------------------------------------------
 
@@ -318,11 +322,45 @@ def create_app(
             raise HTTPException(404)
         return _urlset([f"{base}/a/{a}" for a in ids if f"a_{a}" not in removed])
 
+    @app.get("/search", response_class=HTMLResponse)
+    def search(request: Request, q: str = Query("", max_length=100)):
+        q = q.strip()
+        if not q:
+            return RedirectResponse("/", status_code=303)
+        norm = normalize_name(q)
+        conn = connect()
+        try:
+            artists, _ = artists_page(conn, q=q, page=1, per_page=8)
+            channels, _ = db.channels_page(conn, q=q, page=1, per_page=8)
+            removed = db.removed_ids(conn)
+        finally:
+            conn.close()
+        artists = [a for a in artists if f"a_{a[0]}" not in removed]
+        channels = [c for c in channels if f"yt_{c[0]}" not in removed]
+        exact_a = [a for a in artists if normalize_name(a[1] or "") == norm]
+        exact_c = [c for c in channels if normalize_name(c[1] or "") == norm]
+        # exact-name matches first, then by count
+        artists = exact_a + [a for a in artists if a not in exact_a]
+        channels = exact_c + [c for c in channels if c not in exact_c]
+        if len(exact_a) == 1 and not exact_c and len(artists) == 1:
+            return RedirectResponse(f"/a/{exact_a[0][0]}", status_code=303)
+        if len(exact_c) == 1 and not exact_a and len(channels) == 1:
+            return RedirectResponse(f"/r/yt_{exact_c[0][0]}", status_code=303)
+        return render("search.html", request, q=q, artists=artists, channels=channels, noindex=True)
+
     @app.post("/check")
-    def check(request: Request, youtube: str = Form("")):
+    def check(request: Request, youtube: str = Form(""), name: str = Form("")):
         youtube = youtube.strip()
+        name = name.strip()
+        if not youtube and name:
+            return RedirectResponse(f"/search?q={quote(name)}", status_code=303)
         if not youtube:
-            return render("index.html", request, 400, error="Paste your YouTube channel link.")
+            return render(
+                "index.html",
+                request,
+                400,
+                error="Type your artist or channel name, or paste your YouTube channel link.",
+            )
         try:
             ref = parse_youtube_channel_url(youtube)
         except UnsupportedUrl as exc:
@@ -423,6 +461,8 @@ def create_app(
             request,
             report=report,
             headline=headline(report),
+            verdict=verdict(report),
+            cards=overview_cards(report),
             sha256=report_sha256(report),
             base_url=str(request.base_url).rstrip("/"),
             label_slugs=slugs,

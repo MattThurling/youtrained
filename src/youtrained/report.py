@@ -148,6 +148,61 @@ def headline(report: dict[str, Any]) -> str:
     return line
 
 
+def verdict(report: dict[str, Any]) -> str:
+    """The plain-English answer under the headline. Says 'listed in datasets', never more."""
+    s = report["summary"]
+    videos = s["matched_keys"]
+    songs = s.get("artist_songs", 0)
+    if songs and videos:
+        return (
+            f"Yes. {songs:,} of your songs and {videos:,} of your videos are listed in datasets "
+            "used to train and test AI music models."
+        )
+    if songs:
+        return (
+            f"Yes. {songs:,} of your songs are listed in a dataset used to train AI music models."
+        )
+    if videos:
+        return (
+            f"Yes. {videos:,} of your videos are listed in datasets used to train and test "
+            "AI models."
+        )
+    return (
+        "We found nothing listed under this name. That's good news, with the caveat that we "
+        "only index three public datasets."
+    )
+
+
+def overview_cards(report: dict[str, Any]) -> list[dict[str, Any]]:
+    """One plain card per dataset with hits: what it is, what we found, a few example titles."""
+    cards = []
+    for name, ds in report["datasets"].items():
+        if name == "laion_disco_12m":
+            songs = [s for a in report.get("artists", []) for s in a["songs"]]
+            count = len({s["key"] for s in songs})
+            titles = [s.get("title") for s in songs]
+            noun = "song"
+        else:
+            rows = [h for h in report["hits"] if h["dataset"] == name]
+            count = len({h["key"] for h in rows})
+            titles = [h.get("your_title") for h in rows]
+            noun = "video"
+        if not count:
+            continue
+        examples = list(dict.fromkeys(t for t in titles if t))[:3]
+        cards.append(
+            {
+                "dataset": name,
+                "name": ds["name"],
+                "plain": ds.get("plain") or ds["description"],
+                "found": f"{count:,} of your {noun}{'' if count == 1 else 's'}",
+                "examples": examples,
+                "homepage": ds["homepage"],
+            }
+        )
+    return cards
+
+
 def prerendered_channel_report(conn: sqlite3.Connection, channel_id: str) -> dict[str, Any] | None:
     """A report built purely from the channel mapping, for channels nobody has submitted yet.
 

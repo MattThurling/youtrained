@@ -72,3 +72,24 @@ ol.ranked .name:hover, ul.tree .name:hover { text-decoration: underline; }
 ol.ranked .count, ul.tree .count, .children .count { flex: 0 0 auto; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
 ul.tree li { padding-left: calc(6px + var(--depth, 0) * 22px); }
 ul.tree li[style*="--depth: 0"] .name, ul.tree li[style*="--depth: 1"] .name { font-size: 17px; }
+
+/* --- human layer: hero, verdict, cards, actions, evidence --- */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.lede { font-size: 19px; color: var(--muted); max-width: 620px; }
+form.check details.alt { margin-top: 4px; } form.check details.alt summary { cursor: pointer; color: var(--muted); font-size: 15px; }
+form.check details.alt input { margin-top: 8px; width: 100%; }
+ol.steps { padding-left: 22px; } ol.steps li { margin: 8px 0; }
+.verdict { font-size: 22px; line-height: 1.4; margin: 6px 0 10px; max-width: 680px; }
+.cards { display: grid; gap: 12px; }
+.card { background: var(--card); border-radius: 10px; padding: 16px 18px; border-left: 5px solid var(--accent); }
+.card h3 { margin: 0 0 6px; font-size: 20px; } .card h3 .in { font-weight: 400; color: var(--muted); font-size: 16px; }
+.card p { margin: 0 0 6px; }
+details.action { border-bottom: 1px solid var(--line); padding: 10px 0; } details.action summary { cursor: pointer; font-size: 17px; }
+details.action p { margin: 8px 0 4px; }
+details.evidence { margin-top: 36px; border-top: 2px solid var(--line); padding-top: 10px; }
+details.evidence > summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: 12px; }
+details.evidence > summary::-webkit-details-marker { display: none; }
+details.evidence > summary h2 { margin: 12px 0; } details.evidence > summary h2::before { content: "▸ "; color: var(--accent); }
+details.evidence[open] > summary h2::before { content: "▾ "; }
+.share { margin-top: 28px; }
+.alt-check { margin-top: 36px; padding-top: 10px; border-top: 1px solid var(--line); }
