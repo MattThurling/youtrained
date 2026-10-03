@@ -139,6 +139,8 @@ def test_verdict_and_cards(conn, cache_dir):
         and card["examples"] == ["Song 3"]
     )
     assert card["plain"].startswith("A list of 12 million songs")
+    del songs_only["datasets"]["laion_disco_12m"]["plain"]  # like a report stored before `plain` existed
+    assert overview_cards(songs_only)[0]["plain"].startswith("A list of 12 million songs")
     shared = next(iter_segments(FIXTURES / "eval_segments.csv"))[0]
     videos_only = build_report(
         conn,

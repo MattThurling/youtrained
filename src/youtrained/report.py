@@ -194,7 +194,8 @@ def overview_cards(report: dict[str, Any]) -> list[dict[str, Any]]:
             {
                 "dataset": name,
                 "name": ds["name"],
-                "plain": ds.get("plain") or ds["description"],
+                # Current descriptor text, not the snapshot stored with older reports.
+                "plain": load_descriptor(name).plain or ds["description"],
                 "found": f"{count:,} of your {noun}{'' if count == 1 else 's'}",
                 "examples": examples,
                 "homepage": ds["homepage"],
