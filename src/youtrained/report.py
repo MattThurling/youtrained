@@ -128,18 +128,23 @@ def report_sha256(report: dict[str, Any]) -> str:
 
 
 def headline(report: dict[str, Any]) -> str:
+    """Page title / H1 / share text. Leads with the subject's name so a search for the artist
+    or channel matches, and so pages don't all share one title."""
     s = report["summary"]
-    noun = "videos" if report["subject"]["platform"] == "yt" else "tracks"
+    subject = report["subject"]
+    who = subject.get("title") or subject.get("id") or "This channel"
+    noun = "videos" if subject["platform"] == "yt" else "tracks"
+    matched = s["matched_keys"]
     artist_songs = s.get("artist_songs", 0)
-    if s["matched_keys"] == 0 and artist_songs:
-        return f"{artist_songs} songs under your artist name appear in an AI training dataset"
+    if matched == 0 and artist_songs:
+        return f"{who}: {artist_songs:,} songs appear in an AI training dataset"
     if not s.get("checked_known", True):
         # Pre-rendered from the channel mapping: we know the dataset videos, not the channel total.
-        line = f"{s['matched_keys']} {noun} from this channel appear in AI training datasets"
+        line = f"{who}: {matched:,} {noun} appear in AI training datasets"
     else:
-        line = f"{s['matched_keys']} of your {s['checked']} {noun} appear in AI training datasets"
+        line = f"{who}: {matched:,} of {s['checked']:,} {noun} appear in AI training datasets"
     if artist_songs:
-        line += f", plus {artist_songs} songs under your artist name"
+        line += f", plus {artist_songs:,} songs under the artist name"
     return line
 
 

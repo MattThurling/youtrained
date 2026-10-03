@@ -74,7 +74,7 @@ def test_report_includes_artist_section_and_headline(conn, cache_dir):
     assert report["artists"][0]["songs"][0]["title"] == "Song 3"
     assert report["artists"][0]["songs"][0]["basis"] == "artist_name"
     assert "laion_disco_12m" in report["datasets"], "descriptor included for artist-only reports"
-    assert headline(report) == "1 songs under your artist name appear in an AI training dataset"
+    assert headline(report) == "Artist 3: 1 songs appear in an AI training dataset"
     shared = next(iter_segments(FIXTURES / "eval_segments.csv"))[0]
     both = build_report(
         conn,
@@ -86,7 +86,7 @@ def test_report_includes_artist_section_and_headline(conn, cache_dir):
     )
     assert (
         headline(both)
-        == "1 of your 1 videos appear in AI training datasets, plus 1 songs under your artist name"
+        == "x: 1 of 1 videos appear in AI training datasets, plus 1 songs under the artist name"
     )
 
 

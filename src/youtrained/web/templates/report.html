@@ -12,10 +12,10 @@
   <p class="subject"><a href="{{ report.subject.url }}">{{ report.subject.title }}</a></p>
   <h1>{{ headline }}</h1>
   {% if report.prerendered %}
-  <p class="meta">Built from the dataset index: {{ report.summary.hit_count }} dataset rows point at {{ report.summary.matched_keys }} videos on this channel. The channel's other uploads have not been checked.</p>
+  <p class="meta">Built from the dataset index: {{ "{:,}".format(report.summary.hit_count) }} dataset rows point at {{ "{:,}".format(report.summary.matched_keys) }} videos on this channel. The channel's other uploads have not been checked.</p>
   <form method="post" action="/check" class="inline"><input type="hidden" name="youtube" value="https://www.youtube.com/channel/{{ report.subject.id }}"><button type="submit">Check the full channel</button> <span class="small">lists every upload via YouTube and adds artist matches</span></form>
   {% else %}
-  <p class="meta">{{ report.summary.checked }} videos checked, {{ report.summary.hit_count }} dataset rows matched. Checked {{ report.created_at }} with YouTrained v{{ report.tool_version }}.</p>
+  <p class="meta">{{ "{:,}".format(report.summary.checked) }} videos checked, {{ "{:,}".format(report.summary.hit_count) }} dataset rows matched. Checked {{ report.created_at[:10] }} with YouTrained v{{ report.tool_version }}.</p>
   {% endif %}
   <p class="actions">
     <a class="btn" href="/r/{{ report.report_id }}.json">Download JSON</a>
@@ -27,11 +27,11 @@
 
 {% if report.artists %}
 <section class="dataset artists">
-  <h2>Listed under your artist name <span class="count">{{ report.summary.artist_songs }} songs in LAION-DISCO-12M</span></h2>
+  <h2>Listed under the artist name <span class="count">{{ "{:,}".format(report.summary.artist_songs) }} songs in LAION-DISCO-12M</span></h2>
   <p class="desc">{{ report.datasets.laion_disco_12m.description }}</p>
   {% for a in report.artists %}
   <article class="artist">
-    <h3>{{ a.name or a.artist_id }} <span class="count">{{ a.song_count }} songs</span></h3>
+    <h3>{{ a.name or a.artist_id }} <span class="count">{{ "{:,}".format(a.song_count) }} songs</span></h3>
     <p class="small">
       {% if a.basis == "artist_id" %}Matched exactly: this channel id is the YouTube Music artist id the dataset lists these songs under.{% else %}Probable match by artist name. If this is not you, ignore this section.{% endif %}
       <a href="{{ a.url }}">Artist page on YouTube Music</a>.
@@ -48,7 +48,7 @@
 {% if report.hits %}
 {% for name, ds in report.datasets.items() if ds.hit_count %}
 <section class="dataset">
-  <h2>{{ ds.name }} <span class="count">{{ ds.matched_keys }} of your videos, {{ ds.hit_count }} rows</span></h2>
+  <h2>{{ ds.name }} <span class="count">{{ "{:,}".format(ds.matched_keys) }} videos, {{ "{:,}".format(ds.hit_count) }} rows</span></h2>
   <p class="desc">{{ ds.description }}</p>
   <p class="small">{{ ds.publisher }}, {{ ds.year }}. Licence: {{ ds.licence.name }}. Used for: {{ ds.usage.role|join(" and ") }}. <a href="{{ ds.homepage }}">Dataset page</a>.</p>
   <div class="hits">
@@ -82,7 +82,7 @@
 {% elif not report.artists %}
 <section class="none">
   <h2>No matches</h2>
-  <p>None of the {{ report.summary.checked }} video ids on this channel appear in the datasets we index. That covers only these datasets and only this channel's own uploads; re-uploads of your music by other channels are not checked in this version.</p>
+  <p>None of the {{ "{:,}".format(report.summary.checked) }} video ids on this channel appear in the datasets we index. That covers only these datasets and only this channel's own uploads; re-uploads of your music by other channels are not checked in this version.</p>
 </section>
 {% endif %}
 
@@ -93,7 +93,7 @@
     <table>
       <tr><th>Dataset</th><th>File</th><th>Rows</th><th>Loaded</th><th>SHA-256</th></tr>
       {% for name, files in report.dataset_versions.items() %}{% for f in files %}
-      <tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{{ f.rows }}</td><td>{{ f.loaded_at }}</td><td>{% if f.sha256 %}<code>{{ f.sha256[:16] }}…</code>{% else %}<em>{{ f.status }}</em>{% endif %}</td></tr>
+      <tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{{ "{:,}".format(f.rows or 0) }}</td><td>{{ f.loaded_at }}</td><td>{% if f.sha256 %}<code>{{ f.sha256[:16] }}…</code>{% else %}<em>{{ f.status }}</em>{% endif %}</td></tr>
       {% endfor %}{% endfor %}
     </table>
   </details>

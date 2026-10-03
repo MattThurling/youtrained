@@ -80,7 +80,7 @@ def test_check_redirects_to_stable_report(client, shared_id):
     assert r.status_code == 303 and r.headers["location"] == "/r/yt_someband"
     page = client.get("/r/yt_someband")
     assert page.status_code == 200
-    assert "1 of your 2 videos appear in AI training datasets" in page.text
+    assert "someband: 1 of 2 videos appear in AI training datasets" in page.text
     assert "Our guitar song" in page.text
     assert (
         f"embed/{shared_id}?start=10&amp;end=20" in page.text
@@ -110,7 +110,7 @@ def test_check_redirects_to_stable_report(client, shared_id):
 def test_no_hits_report(client):
     client.post("/check", data={"youtube": "@nobody"})
     page = client.get("/r/yt_nobody")
-    assert "0 of your 1 videos" in page.text and "No matches" in page.text
+    assert "nobody: 0 of 1 videos" in page.text and "No matches" in page.text
 
 
 def test_json_export_and_sha(client, shared_id):
@@ -197,9 +197,9 @@ def test_artist_only_report_via_channel_title(client):
     assert r.status_code == 303
     page = client.get(r.headers["location"])
     assert page.status_code == 200
-    assert "1 songs under your artist name appear in an AI training dataset" in page.text
+    assert "Artist 3: 1 songs appear in an AI training dataset" in page.text
     assert (
-        "Listed under your artist name" in page.text
+        "Listed under the artist name" in page.text
         and "Probable match by artist name" in page.text
     )
     assert "Song 3" in page.text and "What you can do" in page.text

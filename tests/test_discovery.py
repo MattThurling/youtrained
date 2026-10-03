@@ -71,7 +71,7 @@ def client(db_path):
 def test_prerendered_channel_report_from_mapping(client, shared_id, db_path):
     r = client.get(f"/r/yt_{BIG}")
     assert r.status_code == 200
-    assert "6 videos from this channel appear in AI training datasets" in r.text
+    assert "Big Channel: 6 videos appear in AI training datasets" in r.text
     assert "Built from the dataset index" in r.text and "Check the full channel" in r.text
     assert f"Video {shared_id}" in r.text
     assert '<meta name="robots" content="noindex">' not in r.text, "6 videos is above the threshold"

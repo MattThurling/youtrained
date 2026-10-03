@@ -21,7 +21,7 @@ Generated {{ report.created_at }} by YouTrained v{{ report.tool_version }}. Repo
 JSON export SHA-256: <code>{{ sha256 }}</code></p>
 
 <h2>Summary</h2>
-<p>{{ report.summary.checked }} video ids checked; {{ report.summary.matched_keys }} matched; {{ report.summary.hit_count }} dataset rows in total across {{ report.summary.datasets|join(", ") or "no datasets" }}.</p>
+<p>{{ "{:,}".format(report.summary.checked) }} video ids checked; {{ "{:,}".format(report.summary.matched_keys) }} matched; {{ "{:,}".format(report.summary.hit_count) }} dataset rows in total across {{ report.summary.datasets|join(", ") or "no datasets" }}.</p>
 
 {% for a in report.artists %}
 <h2>Listed under artist "{{ a.name or a.artist_id }}" in LAION-DISCO-12M ({{ a.song_count }} songs)</h2>
@@ -71,7 +71,7 @@ JSON export SHA-256: <code>{{ sha256 }}</code></p>
 <h2>Dataset versions indexed</h2>
 <table><tr><th>Dataset</th><th>File</th><th>Rows</th><th>Loaded</th><th>SHA-256</th></tr>
 {% for name, files in report.dataset_versions.items() %}{% for f in files %}
-<tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{{ f.rows }}</td><td>{{ f.loaded_at }}</td><td>{% if f.sha256 %}<code>{{ f.sha256 }}</code>{% else %}<em>{{ f.status }}</em>{% endif %}</td></tr>
+<tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{{ "{:,}".format(f.rows or 0) }}</td><td>{{ f.loaded_at }}</td><td>{% if f.sha256 %}<code>{{ f.sha256 }}</code>{% else %}<em>{{ f.status }}</em>{% endif %}</td></tr>
 {% endfor %}{% endfor %}</table>
 
 <p class="legal">{{ report.not_legal_advice }}</p>

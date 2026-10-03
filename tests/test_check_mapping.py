@@ -90,6 +90,6 @@ def test_web_uses_mapping_and_channel_video_count(tmp_path, cache_dir):
     r = tc.post("/check", data={"youtube": "@mappedband"}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == f"/r/yt_{CHANNEL['id']}"
     page = tc.get(r.headers["location"])
-    assert "1 of your 77 videos appear in AI training datasets" in page.text
+    assert "Mapped Band: 1 of 77 videos appear in AI training datasets" in page.text
     assert f"Song {shared}" in page.text
     assert calls == ["channels"]
