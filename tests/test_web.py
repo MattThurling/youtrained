@@ -199,8 +199,7 @@ def test_artist_only_report_via_channel_title(client):
     assert page.status_code == 200
     assert "Artist 3: 1 songs appear in an AI training dataset" in page.text
     assert (
-        "Listed under the artist name" in page.text
-        and "Probable match by artist name" in page.text
+        "Listed under the artist name" in page.text and "Probable match by artist name" in page.text
     )
     assert "Song 3" in page.text and "What you can do" in page.text
     assert "No matches" not in page.text
