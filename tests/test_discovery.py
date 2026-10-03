@@ -145,6 +145,7 @@ def test_sitemaps_and_robots(client, db_path):
     assert "/labels</loc>" in lb
     robots = client.get("/robots.txt").text
     assert "Sitemap: http://testserver/sitemap.xml" in robots and "Disallow: /check" in robots
+    assert "Disallow: /*.pdf$" in robots and "Disallow: /*.json$" in robots
 
 
 def test_removal_hides_pages_and_sitemap_entries(client, db_path):

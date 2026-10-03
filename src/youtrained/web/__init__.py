@@ -159,7 +159,12 @@ def create_app(
     @app.get("/robots.txt", response_class=PlainTextResponse)
     def robots(request: Request):
         base = str(request.base_url).rstrip("/")
-        return f"User-agent: *\nAllow: /\nDisallow: /check\nDisallow: /search\nSitemap: {base}/sitemap.xml\n"
+        # Downloads (JSON, PDF, OG image) are generated per request; keep crawlers off them.
+        return (
+            "User-agent: *\nAllow: /\nDisallow: /check\nDisallow: /search\n"
+            "Disallow: /*.json$\nDisallow: /*.pdf$\nDisallow: /*/og.png$\n"
+            f"Sitemap: {base}/sitemap.xml\n"
+        )
 
     # --- discovery: channels ---------------------------------------------------
 
@@ -342,9 +347,11 @@ def create_app(
         # exact-name matches first, then by count
         artists = exact_a + [a for a in artists if a not in exact_a]
         channels = exact_c + [c for c in channels if c not in exact_c]
-        if len(exact_a) == 1 and not exact_c and len(artists) == 1:
+        # One exact-name match on one side and none on the other: go straight there. Partial
+        # matches ("bonobos", "RadioBonobo") don't count against an exact hit.
+        if len(exact_a) == 1 and not exact_c:
             return RedirectResponse(f"/a/{exact_a[0][0]}", status_code=303)
-        if len(exact_c) == 1 and not exact_a and len(channels) == 1:
+        if len(exact_c) == 1 and not exact_a:
             return RedirectResponse(f"/r/yt_{exact_c[0][0]}", status_code=303)
         return render("search.html", request, q=q, artists=artists, channels=channels, noindex=True)
 
