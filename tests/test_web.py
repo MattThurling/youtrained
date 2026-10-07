@@ -271,3 +271,32 @@ def test_no_match_verdict(client):
     client.post("/check", data={"youtube": "@nobody"})
     page = client.get("/r/yt_nobody").text
     assert "We found nothing listed under this name." in page and "No matches" in page
+
+
+def test_downloads_are_cacheable_and_pdf_is_rate_limited(client, monkeypatch):
+    client.post("/check", data={"youtube": "@someband"})
+    assert client.get("/r/yt_someband.json").headers["cache-control"] == "public, max-age=86400"
+    assert client.get("/r/yt_someband/og.png").headers["cache-control"] == "public, max-age=86400"
+    from youtrained import web
+
+    monkeypatch.setattr(web, "html_to_pdf", lambda html, base_url=None: b"%PDF-fake")
+    client.app.state.pdf_limiter.limit = 2
+    client.app.state.pdf_limiter.stamps.clear()
+    assert client.get("/r/yt_someband.pdf").status_code == 200
+    assert client.get("/r/yt_someband.pdf").status_code == 200
+    r = client.get("/r/yt_someband.pdf")
+    assert r.status_code == 429 and r.headers["retry-after"] == "60"
+
+
+def test_canonical_links(client):
+    assert '<link rel="canonical" href="http://testserver/">' in client.get("/").text
+    page = client.get("/label/music?subtree=1").text
+    assert '<link rel="canonical" href="http://testserver/label/music">' in page, "query dropped"
+    page = (
+        client.get("/label/music?subtree=1&page=2").text
+        if client.get("/label/music?page=2").status_code == 200
+        else ""
+    )
+    assert '<link rel="canonical"' not in client.get("/channels?q=big").text, (
+        "noindex pages carry no canonical"
+    )

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}YouTrained{% endblock %}</title>
   {% if noindex %}<meta name="robots" content="noindex">{% endif %}
+  {% if canonical and not noindex %}<link rel="canonical" href="{{ canonical }}">{% endif %}
   {% block head %}{% endblock %}
   <link rel="stylesheet" href="/static/style.css?v={{ static_v }}">
   {% if ga_id %}

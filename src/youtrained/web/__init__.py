@@ -69,6 +69,26 @@ STATIC_VERSION = _static_version()
 LABEL_PAGE_SIZE = 50
 PAGE_SIZE = 50
 SITEMAP_CHUNK = 50_000
+PDF_PER_MINUTE = 6  # WeasyPrint renders are CPU-heavy; a crawl must not be able to saturate the box
+DOWNLOAD_CACHE = "public, max-age=86400"  # lets the CDN serve repeat downloads without touching us
+
+
+class _RateLimiter:
+    """Tiny in-process limiter: at most `limit` events per rolling minute."""
+
+    def __init__(self, limit: int) -> None:
+        self.limit = limit
+        self.stamps: list[float] = []
+
+    def allow(self) -> bool:
+        now = time.monotonic()
+        self.stamps = [t for t in self.stamps if now - t < 60]
+        if len(self.stamps) >= self.limit:
+            return False
+        self.stamps.append(now)
+        return True
+
+
 NOINDEX_BELOW = 5  # label pages with fewer videos are noindex (thin content)
 _CACHE_TTL_S = 3600
 
@@ -107,11 +127,20 @@ def create_app(
 
     cache = _Cached()
     app.state.label_cache = cache
+    pdf_limiter = _RateLimiter(PDF_PER_MINUTE)
+    app.state.pdf_limiter = pdf_limiter
 
     def connect() -> sqlite3.Connection:
         conn = db.connect(path)
         db.init_schema(conn)
         return conn
+
+    def canonical_for(request: Request) -> str:
+        """Scheme+host+path, keeping only a `page` query parameter, so variants collapse."""
+        base = str(request.base_url).rstrip("/")
+        page = request.query_params.get("page")
+        suffix = f"?page={page}" if page and page != "1" else ""
+        return f"{base}{request.url.path}{suffix}"
 
     def render(name: str, request: Request, status: int = 200, **ctx) -> HTMLResponse:
         return templates.TemplateResponse(
@@ -122,6 +151,7 @@ def create_app(
                 "ga_id": config.ga_measurement_id(),
                 "presence_note": config.PRESENCE_NOTE,
                 "static_v": STATIC_VERSION,
+                "canonical": canonical_for(request),
                 **ctx,
             },
             status_code=status,
@@ -426,12 +456,19 @@ def create_app(
             headers={
                 "X-Report-SHA256": report_sha256(report),
                 "Content-Disposition": f'attachment; filename="{report_id}.json"',
+                "Cache-Control": DOWNLOAD_CACHE,
             },
         )
 
     @app.get("/r/{report_id}.pdf")
     def report_as_pdf(request: Request, report_id: str):
         report = load_report(report_id)
+        if not pdf_limiter.allow():
+            return Response(
+                "Too many PDF requests right now; please try again in a minute.",
+                status_code=429,
+                headers={"Retry-After": "60", "Cache-Control": "no-store"},
+            )
         html = templates.get_template("report_pdf.html").render(
             report=report,
             headline=headline(report),
@@ -446,14 +483,21 @@ def create_app(
         return Response(
             pdf,
             media_type="application/pdf",
-            headers={"Content-Disposition": f'attachment; filename="{report_id}.pdf"'},
+            headers={
+                "Content-Disposition": f'attachment; filename="{report_id}.pdf"',
+                "Cache-Control": DOWNLOAD_CACHE,
+            },
         )
 
     @app.get("/r/{report_id}/og.png")
     def report_og(report_id: str):
         report = load_report(report_id)
         subtitle = report["subject"]["title"] or report["subject"]["id"]
-        return Response(render_og_png(headline(report), subtitle), media_type="image/png")
+        return Response(
+            render_og_png(headline(report), subtitle),
+            media_type="image/png",
+            headers={"Cache-Control": DOWNLOAD_CACHE},
+        )
 
     @app.get("/r/{report_id}", response_class=HTMLResponse)
     def report_page(request: Request, report_id: str):
