@@ -38,9 +38,13 @@ class PdfFailed(RuntimeError):
     """The render child crashed, ran out of memory, or timed out."""
 
 
-def _prefer_killing_child() -> None:
-    """Runs in the child before exec. If the container runs out of memory mid-render, make the
-    kernel's OOM killer pick this process rather than the server (Linux only; harmless elsewhere)."""
+def _prefer_killing_me() -> None:
+    """Called first thing in the child. If the container runs out of memory mid-render, make the
+    kernel's OOM killer pick this process rather than the server (Linux only; harmless elsewhere).
+
+    Done in the child, not via `preexec_fn`: a fork hook that runs Python code can deadlock in a
+    multithreaded parent such as the uvicorn worker pool (seen in production: every render timed out).
+    """
     try:
         Path("/proc/self/oom_score_adj").write_text("1000")
     except OSError:
@@ -58,7 +62,6 @@ def html_to_pdf(html: str, base_url: str | None = None) -> bytes:
             capture_output=True,
             timeout=RENDER_TIMEOUT_S,
             check=False,
-            preexec_fn=_prefer_killing_child,
         )
     except subprocess.TimeoutExpired as exc:
         raise PdfFailed(f"PDF render exceeded {RENDER_TIMEOUT_S}s") from exc
@@ -80,6 +83,7 @@ def _render_in_child(html: str, base_url: str | None) -> bytes:
 
 
 def main() -> int:
+    _prefer_killing_me()
     html = sys.stdin.buffer.read().decode("utf-8")
     base_url = sys.argv[1] if len(sys.argv) > 1 else None
     try:
