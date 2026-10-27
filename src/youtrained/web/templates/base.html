@@ -24,20 +24,22 @@
   {% endif %}
 </head>
 <body>
-  <header class="site">
-    <a class="brand" href="/">YouTrained</a>
+  <header class="site"><div class="wrap">
+    <a class="brand" href="/">You<b>Trained</b></a>
     {% set path = request.url.path %}
     <nav class="main" aria-label="Main">
       <a href="/" {% if path == "/" %}aria-current="page"{% endif %}>Check</a>
-      <a href="/channels" {% if path.startswith("/channels") or path.startswith("/r/") %}aria-current="page"{% endif %}>Channels</a>
       <a href="/artists" {% if path.startswith("/artists") or path.startswith("/a/") %}aria-current="page"{% endif %}>Artists</a>
+      <a href="/channels" {% if path.startswith("/channels") or path.startswith("/r/") %}aria-current="page"{% endif %}>Channels</a>
       <a href="/labels" {% if path.startswith("/label") %}aria-current="page"{% endif %}>Labels</a>
       <a href="/about" {% if path == "/about" %}aria-current="page"{% endif %}>About</a>
     </nav>
-  </header>
+  </div></header>
   <main>{% block content %}{% endblock %}</main>
-  <footer class="site">
-    <p>YouTrained v{{ version }}. Pure identifier lookup against public research dataset manifests. No audio is uploaded or analysed. <a href="/about">About, removals and sources</a>.</p>
-  </footer>
+  <footer class="site"><div class="wrap">
+    <span>YouTrained v{{ version }}</span>
+    <span>Pure identifier lookup against public research dataset manifests. No audio is uploaded or analysed.</span>
+    <a href="/about">About, removals and sources</a>
+  </div></footer>
 </body>
 </html>

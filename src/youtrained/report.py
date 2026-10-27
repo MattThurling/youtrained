@@ -11,7 +11,7 @@ from typing import Any
 from . import __version__, db
 from .artists import ArtistMatch
 from .config import NOT_LEGAL_ADVICE
-from .descriptors import load_descriptor
+from .descriptors import Descriptor, load_descriptor
 from .models import KEY_YOUTUBE_VIDEO, CheckResult, Hit
 
 
@@ -148,29 +148,45 @@ def headline(report: dict[str, Any]) -> str:
     return line
 
 
-def verdict(report: dict[str, Any]) -> str:
-    """The plain-English answer under the headline. Says 'listed in datasets', never more."""
+def verdict_parts(report: dict[str, Any]) -> tuple[str, str]:
+    """("Yes"|"No", sentence): the one-word answer and the plain-English line under it.
+    Says 'listed in datasets', never more."""
     s = report["summary"]
     videos = s["matched_keys"]
     songs = s.get("artist_songs", 0)
     if songs and videos:
-        return (
-            f"Yes. {songs:,} of your songs and {videos:,} of your videos are listed in datasets "
+        return "Yes", (
+            f"{songs:,} of your songs and {videos:,} of your videos are listed in datasets "
             "used to train and test AI music models."
         )
     if songs:
-        return (
-            f"Yes. {songs:,} of your songs are listed in a dataset used to train AI music models."
+        return "Yes", (
+            f"{songs:,} of your song{'' if songs == 1 else 's'} "
+            f"{'is' if songs == 1 else 'are'} listed in a dataset used to train AI music models."
         )
     if videos:
-        return (
-            f"Yes. {videos:,} of your videos are listed in datasets used to train and test "
-            "AI models."
+        return "Yes", (
+            f"{videos:,} of your video{'' if videos == 1 else 's'} "
+            f"{'is' if videos == 1 else 'are'} listed in datasets used to train and test AI models."
         )
-    return (
+    return "No", (
         "We found nothing listed under this name. That's good news, with the caveat that we "
         "only index three public datasets."
     )
+
+
+def verdict(report: dict[str, Any]) -> str:
+    """The plain-English answer under the headline, as one string (share text, PDF)."""
+    yn, rest = verdict_parts(report)
+    return f"{yn}. {rest}"
+
+
+def common_text(report: dict[str, Any]) -> Descriptor:
+    """The current descriptor whose shared text (what this means, what you can do) the page
+    shows. Always the live YAML, not the snapshot stored with the report, so wording fixes and
+    dropped items reach old reports too."""
+    name = next(iter(report.get("datasets") or {}), None) or "audioset"
+    return load_descriptor(name)
 
 
 def overview_cards(report: dict[str, Any]) -> list[dict[str, Any]]:
@@ -190,12 +206,18 @@ def overview_cards(report: dict[str, Any]) -> list[dict[str, Any]]:
         if not count:
             continue
         examples = list(dict.fromkeys(t for t in titles if t))[:3]
+        # Current descriptor text, not the snapshot stored with older reports.
+        current = load_descriptor(name)
+        role = list(current.usage.role)
         cards.append(
             {
                 "dataset": name,
                 "name": ds["name"],
-                # Current descriptor text, not the snapshot stored with older reports.
-                "plain": load_descriptor(name).plain or ds["description"],
+                "plain": current.plain or ds["description"],
+                "count": count,
+                "noun": noun,
+                "role": role,
+                "role_text": " and ".join("testing" if r == "evaluation" else r for r in role),
                 "found": f"{count:,} of your {noun}{'' if count == 1 else 's'}",
                 "examples": examples,
                 "homepage": ds["homepage"],

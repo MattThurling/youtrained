@@ -110,7 +110,7 @@ def test_check_redirects_to_stable_report(client, shared_id):
 def test_no_hits_report(client):
     client.post("/check", data={"youtube": "@nobody"})
     page = client.get("/r/yt_nobody")
-    assert "nobody: 0 of 1 videos" in page.text and "No matches" in page.text
+    assert "nobody: 0 of 1 videos" in page.text and "We found nothing listed" in page.text
 
 
 def test_json_export_and_sha(client, shared_id):
@@ -202,7 +202,7 @@ def test_artist_only_report_via_channel_title(client):
         "Listed under the artist name" in page.text and "Probable match by artist name" in page.text
     )
     assert "Song 3" in page.text and "What you can do" in page.text
-    assert "No matches" not in page.text
+    assert "We found nothing listed" not in page.text
 
 
 def test_ga_tag_only_when_configured(client, monkeypatch):
@@ -248,29 +248,35 @@ def test_label_cache_fills_even_when_monotonic_clock_is_small(client, monkeypatc
     assert 'href="/label/music"' in client.get("/labels").text
 
 
-def test_report_overview_verdict_cards_and_collapsed_evidence(client, shared_id):
+def test_report_verdict_tiles_then_evidence_then_context(client, shared_id):
     client.post("/check", data={"youtube": "@someband"})
     page = client.get("/r/yt_someband").text
+    assert '<span class="yn">Yes.</span>' in page
     assert (
-        "Yes. 1 of your songs and 1 of your videos are listed in datasets used to train and test AI music models."
+        "1 of your songs and 1 of your videos are listed in datasets used to train and test AI music models."
         in page
     )
-    assert "<h2>What we found</h2>" in page
-    assert "1 of your videos" in page and "1 of your song" in page
-    assert "Including Our guitar song." in page, "example titles come from the hits"
-    assert page.index("<h2>What you can do</h2>") < page.index('<article class="hit">'), (
-        "actions before evidence"
+    assert "video in AudioSet" in page and "song in LAION-DISCO-12M" in page
+    assert "Including <span>Our guitar song</span>" in page, "example titles come from the hits"
+    assert (
+        page.index('<div class="tiles')
+        < page.index('<article class="hit">')
+        < page.index("<h2>What this means</h2>")
+        < page.index("<h2>What you can do</h2>")
+    ), "verdict, tiles, evidence, context, routes"
+    assert "<details" not in page.split("<h2>What this means</h2>")[0], (
+        "evidence is open, not folded"
     )
-    assert '<details class="evidence"' in page and page.index(
-        '<details class="evidence"'
-    ) < page.index('<article class="hit">')
     assert "Download the evidence (PDF)" in page
 
 
 def test_no_match_verdict(client):
     client.post("/check", data={"youtube": "@nobody"})
     page = client.get("/r/yt_nobody").text
-    assert "We found nothing listed under this name." in page and "No matches" in page
+    assert (
+        '<span class="yn">No.</span>' in page and "We found nothing listed under this name." in page
+    )
+    assert '<div class="tiles' not in page and '<article class="hit">' not in page
 
 
 def test_downloads_are_cacheable_and_pdf_is_rate_limited(client, monkeypatch):

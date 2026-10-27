@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Results for “{{ q }}” – YouTrained{% endblock %}
 {% block content %}
-<section>
+<div class="wrap">
+<section class="browse results">
   <p class="crumbs"><a href="/">Check</a> › Results</p>
   <h1>Is one of these you?</h1>
-  <p class="lede">Names matching “{{ q }}” in the datasets we index.</p>
+  <p class="muted">Names matching “{{ q }}” in the datasets we index.</p>
   {% if artists %}
   <h2>Artists <span class="count">listed in LAION-DISCO-12M</span></h2>
   <ol class="ranked">
@@ -25,17 +26,20 @@
   <div class="none">
     <h2>We couldn't find that name</h2>
     <p>Nothing called “{{ q }}” appears in the datasets we index. That usually means your music isn't listed in them, which is good news.</p>
-    <p class="small">Two caveats: we index three public datasets, not every dataset that exists, and the datasets list artists under the name on YouTube Music, which may differ from the one you use.</p>
+    <p class="small muted">Two caveats: we index three public datasets, not every dataset that exists, and the datasets list artists under the name on YouTube Music, which may differ from the one you use.</p>
   </div>
   {% endif %}
   <section class="alt-check">
     <h2>Not you, or want the full picture?</h2>
-    <p>Paste your YouTube channel link and we'll check every upload on it.</p>
+    <p class="muted">Paste your YouTube channel link and we'll check every upload on it.</p>
     <form method="post" action="/check" class="check">
       <label for="youtube" class="visually-hidden">YouTube channel link</label>
-      <input id="youtube" name="youtube" type="text" placeholder="https://www.youtube.com/@yourchannel">
-      <button type="submit">Check my channel</button>
+      <div class="field">
+        <input id="youtube" name="youtube" type="text" placeholder="https://www.youtube.com/@yourchannel">
+        <button type="submit">Check my channel</button>
+      </div>
     </form>
   </section>
 </section>
+</div>
 {% endblock %}

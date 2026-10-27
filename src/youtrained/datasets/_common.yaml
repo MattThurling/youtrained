@@ -1,6 +1,7 @@
 # Shared text reused by every dataset descriptor. A dataset YAML may override any key.
 # Wording rules (YOUTRAINED_BRIEF.md): never "proof", "stolen", "Suno trained on this".
 # Every litigation or licensing claim carries a source URL and date.
+# `short` is the one-sentence version shown on the web report; `text` is the full version (PDF).
 
 litigation_context:
   last_reviewed: 2026-09-24
@@ -30,22 +31,12 @@ litigation_context:
       url: https://www.musicbusinessworldwide.com/suno-inks-global-licensing-deal-with-believe/
       date: 2026-09-08
 
+# Spawning's Do Not Train registry was listed here until October 2026. haveibeentrained.com
+# has been showing an "under maintenance" page, so it is out until the service is back.
 what_you_can_do:
-  - title: Register an opt-out with Spawning's Do Not Train registry
-    text: >
-      Spawning runs Have I Been Trained and the Do Not Train registry, which lets rights
-      holders record that their works should not be used for future training. Some model
-      developers, including Stability AI and Hugging Face, have said they honour it.
-      Compliance is voluntary, so an opt-out is a signal of intent rather than a
-      guarantee, and it applies to future training rather than datasets already published.
-    sources:
-      - title: "Spawning: Have I Been Trained is back"
-        url: https://spawning.substack.com/p/have-i-been-trained-is-back
-        date: 2024-02-13
-      - title: "Have I Been Trained"
-        url: https://haveibeentrained.com/
-        date: 2026-09-24
-  - title: "UK: raise it with PRS for Music"
+  - title: "UK, PRS members"
+    short: >
+      Send PRS for Music your report and ask what collective or licensing route covers your works.
     text: >
       PRS for Music's AI policy (Version 1, October 2025) says the society advocates for
       licensing of any existing music used by AI developers, is evaluating enforcement
@@ -59,7 +50,10 @@ what_you_can_do:
       - title: "PRS for Music: AI and music copyright"
         url: https://www.prsformusic.com/works/how-copyright-works/ai-and-music-copyright
         date: 2026-09-24
-  - title: "Germany: GEMA is litigating and licensing on members' behalf"
+  - title: "Germany, GEMA members"
+    short: >
+      GEMA won a first-instance ruling against Suno on 31 July 2026 and has a licensing model.
+      Ask how they apply to your repertoire.
     text: >
       GEMA sued Suno in January 2025 and obtained a first-instance judgment from the
       Regional Court of Munich I on 31 July 2026 (not yet final). GEMA has also published
@@ -76,7 +70,10 @@ what_you_can_do:
       - title: "Music Business Worldwide: Germany's GEMA launches AI Charter"
         url: https://www.musicbusinessworldwide.com/germanys-gema-launches-ai-charter-laying-out-legal-and-ethical-principles-for-artificial-intelligence-in-music/
         date: 2024-11-05
-  - title: Check whether your label or distributor has an opt-in AI deal
+  - title: "Signed to Warner, BMG or Believe/TuneCore"
+    short: >
+      Each has an opt-in licensing deal with Suno. Ask your label what opting in or out means
+      for you and whether any settlement money reaches artists.
     text: >
       Warner Music Group (25 November 2025), BMG (12 August 2026) and Believe/TuneCore
       (8 September 2026) have each agreed licensing deals with Suno that are described as

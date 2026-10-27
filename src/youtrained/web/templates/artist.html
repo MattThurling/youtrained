@@ -1,52 +1,92 @@
 {% extends "base.html" %}
-{% block title %}{{ artist.name or artist.artist_id }} – songs in LAION-DISCO-12M – YouTrained{% endblock %}
+{% set who = artist.name or artist.artist_id %}
+{% set n = artist.song_count %}
+{% block title %}{{ "{:,}".format(n) }} song{{ "" if n == 1 else "s" }} by {{ who }} appear in an AI training dataset – YouTrained{% endblock %}
 {% block content %}
-<section class="summary">
-  <p class="crumbs"><a href="/artists">Artists</a></p>
-  <h1>{{ "{:,}".format(artist.song_count) }} song{{ "" if artist.song_count == 1 else "s" }} by {{ artist.name or artist.artist_id }} appear in an AI training dataset</h1>
-  <p class="verdict">Yes. {{ "{:,}".format(artist.song_count) }} of your songs are listed in a dataset used to train AI music models.</p>
-  <p class="meta">Listed in LAION-DISCO-12M under the YouTube Music artist <a href="https://music.youtube.com/channel/{{ artist.artist_id }}">{{ artist.name or artist.artist_id }}</a>.</p>
-</section>
-<section class="overview">
-  <h2>What we found</h2>
-  <div class="cards">
-    <article class="card">
-      <h3>{{ "{:,}".format(artist.song_count) }} of your song{{ "" if artist.song_count == 1 else "s" }} <span class="in">in {{ dataset.name }}</span></h3>
-      <p>{{ dataset.plain or dataset.description }}</p>
-      {% set ex = hits[:3]|map(attribute="title")|select|list %}{% if ex %}<p class="small">Including {{ ex|join(", ") }}.</p>{% endif %}
+<section class="verdict listed"><div class="wrap">
+  <p class="subject">
+    <span class="eyebrow">Artist</span>
+    <a href="https://music.youtube.com/channel/{{ artist.artist_id }}">{{ who }} on YouTube Music</a>
+  </p>
+  <h1><span class="yn">Yes.</span> {{ "{:,}".format(n) }} of your song{{ "" if n == 1 else "s" }} {{ "is" if n == 1 else "are" }} listed in a dataset used to train AI music models.</h1>
+</div></section>
+
+<div class="wrap">
+  <div class="tiles one">
+    <article class="tile">
+      <span class="role">Used for training</span>
+      <span class="n">{{ "{:,}".format(n) }}</span>
+      <p class="of">song{{ "" if n == 1 else "s" }} in {{ dataset.name }} <span>under the artist name</span></p>
+      <p class="plain">{{ dataset.plain or dataset.description }}</p>
+      {% set ex = hits[:3]|map(attribute="title")|select|list %}{% if ex %}<p class="eg">Including <span>{{ ex|join(", ") }}</span></p>{% endif %}
     </article>
   </div>
-</section>
-<section class="actions-list">
-  <h2>What you can do</h2>
-  {% for a in dataset.what_you_can_do %}
-  <details class="action">
-    <summary><strong>{{ a.title }}</strong></summary>
-    <p>{{ a.text }}</p>
-    <ul class="sources">{% for s in a.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
-  </details>
-  {% endfor %}
-  <p class="actions"><a class="btn secondary" href="/">Check another name</a></p>
-</section>
-<details class="evidence" id="evidence" {% if page > 1 %}open{% endif %}>
-  <summary><h2>The evidence</h2><span class="small">every song the dataset lists under this artist</span></summary>
-<section class="dataset">
-  <h2>{{ dataset.name }}</h2>
-  <p class="desc">{{ dataset.description }}</p>
-  <div class="hits">
-    {% set report = {"datasets": {"laion_disco_12m": {"name": dataset.name}}} %}
-    {% for hit in hits %}{% include "_hit.html" %}{% endfor %}
+
+  <div class="evidence">
+  <section class="group">
+    <header>
+      <h3>Listed under the artist name <span class="count">{{ "{:,}".format(n) }} songs in {{ dataset.name }}</span></h3>
+      <p class="desc">Matched exactly: this YouTube Music artist id is the one the dataset lists these songs under.</p>
+    </header>
+    <div class="hits">
+      {% set report = {"datasets": {"laion_disco_12m": {"name": dataset.name}}} %}
+      {% for hit in hits %}{% include "_hit.html" %}{% endfor %}
+    </div>
+    {% if pages > 1 %}
+    <nav class="pager">
+      {% if page > 1 %}<a href="/a/{{ artist.artist_id }}?page={{ page - 1 }}">‹ Previous</a>{% endif %}
+      <span>Page {{ page }} of {{ pages }}</span>
+      {% if page < pages %}<a href="/a/{{ artist.artist_id }}?page={{ page + 1 }}">Next ›</a>{% endif %}
+    </nav>
+    {% endif %}
+  </section>
   </div>
-  {% if pages > 1 %}
-  <nav class="pager">
-    {% if page > 1 %}<a href="/a/{{ artist.artist_id }}?page={{ page - 1 }}">‹ Previous</a>{% endif %}
-    <span>Page {{ page }} of {{ pages }}</span>
-    {% if page < pages %}<a href="/a/{{ artist.artist_id }}?page={{ page + 1 }}">Next ›</a>{% endif %}
-  </nav>
-  {% endif %}
-</section>
-</details>
-<section class="provenance">
-  <p class="legal">{{ presence_note }} If you are this artist and want this page removed, see <a href="/about#removal">removals</a>.</p>
-</section>
+</div>
+
+<section><div class="wrap sect context">
+  <div>
+    <h2>What this means</h2>
+    <p class="intro">Last reviewed {{ dataset.litigation_context.last_reviewed }}.</p>
+  </div>
+  <div>
+    <p>{{ dataset.litigation_context.text }}</p>
+    <ul class="sources">{% for s in dataset.litigation_context.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
+  </div>
+</div></section>
+
+<section><div class="wrap sect">
+  <div>
+    <h2>What you can do</h2>
+    <p class="intro">{{ dataset.what_you_can_do|length }} routes. None is a guarantee.</p>
+  </div>
+  <ul class="routes">
+    {% for a in dataset.what_you_can_do %}
+    <li>
+      <span><b>{{ a.title }}.</b> {{ a.short }}</span>
+      <ul class="sources">{% for s in a.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
+    </li>
+    {% endfor %}
+  </ul>
+</div></section>
+
+<section><div class="wrap sect">
+  <div><h2>Is this you?</h2></div>
+  <div class="downloads">
+    <div class="btns">
+      <a class="btn quiet" href="/">Check another name</a>
+    </div>
+    <p class="legal small muted">{{ presence_note }} If you are this artist and want this page removed, see <a href="/about#removal">removals</a>.</p>
+  </div>
+</div></section>
+<script>
+document.addEventListener("click", function (ev) {
+  var btn = ev.target.closest("button.player");
+  if (!btn) return;
+  var frame = document.createElement("iframe");
+  frame.src = "https://www.youtube-nocookie.com/embed/" + btn.dataset.id + "?autoplay=1&rel=0";
+  frame.width = 320; frame.height = 180; frame.allow = "autoplay; encrypted-media";
+  frame.allowFullscreen = true; frame.title = btn.getAttribute("aria-label");
+  btn.replaceWith(frame);
+});
+</script>
 {% endblock %}

@@ -8,118 +8,131 @@
   <meta name="twitter:card" content="summary_large_image">
 {% endblock %}
 {% block content %}
-<section class="summary">
-  <p class="subject"><a href="{{ report.subject.url }}">{{ report.subject.title }}</a></p>
-  <h1>{{ headline }}</h1>
-  <p class="verdict">{{ verdict }}</p>
+{% set listed = cards|length > 0 %}
+{% set checked_known = report.summary.get("checked_known", True) %}
+<section class="verdict {{ 'listed' if listed else 'clear' }}"><div class="wrap">
+  <p class="subject">
+    <span class="eyebrow">Report</span>
+    <a href="{{ report.subject.url }}">{{ report.subject.title }}</a>
+    {% if report.prerendered %}
+    <span class="muted small">built from the datasets alone</span>
+    {% else %}
+    <span class="muted small">{{ "{:,}".format(report.summary.checked) }} uploads checked on {{ report.created_at[:10] }}</span>
+    {% endif %}
+  </p>
+  <h1><span class="yn">{{ yn }}.</span> {{ verdict_text }}</h1>
   {% if report.prerendered %}
-  <p class="meta">This page was built from the datasets alone, so it only knows about videos they list. To check every upload on the channel:</p>
+  <p class="lede">This page only knows about the videos the datasets list. To check every upload on the channel:</p>
   <form method="post" action="/check" class="inline"><input type="hidden" name="youtube" value="https://www.youtube.com/channel/{{ report.subject.id }}"><button type="submit">Check all my uploads</button></form>
-  {% else %}
-  <p class="meta">{{ "{:,}".format(report.summary.checked) }} videos checked on {{ report.created_at[:10] }}.</p>
+  {% elif not listed %}
+  <p class="lede">None of the {{ "{:,}".format(report.summary.checked) }} video ids on this channel appear in the datasets we index. That covers only these datasets and only this channel's own uploads. Re-uploads of your music by other channels are not checked.</p>
   {% endif %}
-</section>
+</div></section>
 
-{% if cards %}
-<section class="overview">
-  <h2>What we found</h2>
-  <div class="cards">
+{% if listed %}
+<div class="wrap">
+  <div class="tiles{% if cards|length == 1 %} one{% endif %}">
     {% for c in cards %}
-    <article class="card">
-      <h3>{{ c.found }} <span class="in">in {{ c.name }}</span></h3>
-      <p>{{ c.plain }}</p>
-      {% if c.examples %}<p class="small">Including {{ c.examples|join(", ") }}.</p>{% endif %}
+    <article class="tile">
+      <span class="role{% if 'training' not in c.role %} test{% endif %}">Used for {{ c.role_text }}</span>
+      <span class="n">{{ "{:,}".format(c.count) }}</span>
+      <p class="of">{{ c.noun }}{{ "" if c.count == 1 else "s" }} in {{ c.name }} <span>{% if c.dataset == "laion_disco_12m" %}under the artist name{% elif checked_known %}of {{ "{:,}".format(report.summary.checked) }} checked{% endif %}</span></p>
+      <p class="plain">{{ c.plain }}</p>
+      {% if c.examples %}<p class="eg">Including <span>{{ c.examples|join(", ") }}</span></p>{% endif %}
     </article>
     {% endfor %}
   </div>
-</section>
 
-<section class="actions-list">
-  <h2>What you can do</h2>
-  {% for a in (report.datasets.values()|list)[0].what_you_can_do %}
-  <details class="action">
-    <summary><strong>{{ a.title }}</strong></summary>
-    <p>{{ a.text }}</p>
-    <ul class="sources">{% for s in a.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
-  </details>
-  {% endfor %}
-</section>
-
-<section class="context">
-  <h2>What this means</h2>
-  {% set ctx = (report.datasets.values()|list)[0].litigation_context %}
-  <p>{{ ctx.text }}</p>
-  <p class="small">Sources (last reviewed {{ ctx.last_reviewed }}):</p>
-  <ul class="sources">{% for s in ctx.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
-</section>
-{% else %}
-<section class="none">
-  <h2>No matches</h2>
-  <p>None of the {{ "{:,}".format(report.summary.checked) }} video ids on this channel appear in the datasets we index. That covers only these datasets and only this channel's own uploads; re-uploads of your music by other channels are not checked in this version.</p>
-</section>
-{% endif %}
-
-<section class="share">
-  <p class="actions">
-    <a class="btn" rel="nofollow" href="/r/{{ report.report_id }}.pdf">Download the evidence (PDF)</a>
-    <a class="btn secondary" rel="nofollow" href="/r/{{ report.report_id }}.json">JSON</a>
-    <a class="btn secondary" href="/">Check another name</a>
-  </p>
-  <p class="small">Share this page: <code>{{ base_url }}/r/{{ report.report_id }}</code></p>
-</section>
-
-{% if report.hits or report.artists %}
-<details class="evidence" id="evidence">
-  <summary><h2>The evidence</h2><span class="small">every dataset row we matched, with links to the exact clips</span></summary>
-
-{% if report.artists %}
-<section class="dataset artists">
-  <h2>Listed under the artist name <span class="count">{{ "{:,}".format(report.summary.artist_songs) }} songs in LAION-DISCO-12M</span></h2>
-  <p class="desc">{{ report.datasets.laion_disco_12m.description }}</p>
-  {% for a in report.artists %}
-  <article class="artist">
-    <h3>{{ a.name or a.artist_id }} <span class="count">{{ "{:,}".format(a.song_count) }} songs</span></h3>
-    <p class="small">
+  <div class="evidence">
+  {% if report.artists %}
+  <section class="group">
+    <header>
+      <h3>Listed under the artist name <span class="count">{{ "{:,}".format(report.summary.artist_songs) }} songs in LAION-DISCO-12M</span></h3>
+    </header>
+    {% for a in report.artists %}
+    {% if report.artists|length > 1 %}<h3 class="small">{{ a.name or a.artist_id }} <span class="count">{{ "{:,}".format(a.song_count) }} songs</span></h3>{% endif %}
+    <p class="desc small">
       {% if a.basis == "artist_id" %}Matched exactly: this channel id is the YouTube Music artist id the dataset lists these songs under.{% else %}Probable match by artist name. If this is not you, ignore this section.{% endif %}
       <a href="{{ a.url }}">Artist page on YouTube Music</a>.
     </p>
     <div class="hits">
       {% for hit in a.songs[:300] %}{% include "_hit.html" %}{% endfor %}
-      {% if a.songs|length > 300 %}<p class="small">Showing 300 of {{ "{:,}".format(a.songs|length) }} songs. <a href="/a/{{ a.artist_id }}">See all on the artist page</a>.</p>{% endif %}
     </div>
-  </article>
+    {% if a.songs|length > 300 %}<p class="more">Showing 300 of {{ "{:,}".format(a.songs|length) }} songs. <a href="/a/{{ a.artist_id }}">See all on the artist page</a>.</p>{% endif %}
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% for name, ds in report.datasets.items() if ds.hit_count %}
+  <section class="group">
+    <header>
+      <h3>{{ ds.name }} <span class="count">{{ "{:,}".format(ds.matched_keys) }} videos, {{ "{:,}".format(ds.hit_count) }} rows</span></h3>
+    </header>
+    <div class="hits">
+      {% set ns = namespace(shown=0) %}
+      {% for hit in report.hits if hit.dataset == name %}{% if ns.shown < 300 %}{% include "_hit.html" %}{% endif %}{% set ns.shown = ns.shown + 1 %}{% endfor %}
+    </div>
+    {% if ns.shown > 300 %}<p class="more">Showing 300 of {{ "{:,}".format(ns.shown) }} rows. The JSON and PDF downloads contain all of them.</p>{% endif %}
+  </section>
   {% endfor %}
-</section>
-{% endif %}
-
-{% for name, ds in report.datasets.items() if ds.hit_count %}
-<section class="dataset">
-  <h2>{{ ds.name }} <span class="count">{{ "{:,}".format(ds.matched_keys) }} videos, {{ "{:,}".format(ds.hit_count) }} rows</span></h2>
-  <p class="desc">{{ ds.description }}</p>
-  <p class="small">{{ ds.publisher }}, {{ ds.year }}. Licence: {{ ds.licence.name }}. Used for: {{ ds.usage.role|join(" and ") }}. <a href="{{ ds.homepage }}">Dataset page</a>.</p>
-  <div class="hits">
-    {% set ns = namespace(shown=0) %}
-    {% for hit in report.hits if hit.dataset == name %}{% if ns.shown < 300 %}{% include "_hit.html" %}{% endif %}{% set ns.shown = ns.shown + 1 %}{% endfor %}
-    {% if ns.shown > 300 %}<p class="small">Showing 300 of {{ "{:,}".format(ns.shown) }} rows. The JSON and PDF downloads contain all of them.</p>{% endif %}
   </div>
-</section>
-{% endfor %}
-</details>
+</div>
 {% endif %}
 
-<section class="provenance">
-  <h2>Provenance</h2>
-  <p class="small">JSON export SHA-256: <code>{{ sha256 }}</code></p>
-  <details><summary>Dataset versions indexed</summary>
-    <table>
-      <tr><th>Dataset</th><th>File</th><th>Rows</th><th>Loaded</th><th>SHA-256</th></tr>
-      {% for name, files in report.dataset_versions.items() %}{% for f in files %}
-      <tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{{ "{:,}".format(f.rows or 0) }}</td><td>{{ f.loaded_at }}</td><td>{% if f.sha256 %}<code>{{ f.sha256[:16] }}…</code>{% else %}<em>{{ f.status }}</em>{% endif %}</td></tr>
-      {% endfor %}{% endfor %}
-    </table>
-  </details>
-  <p class="legal">{{ presence_note }} {{ report.not_legal_advice }} If you are the subject of this page and want it removed, see <a href="/about#removal">removals</a>.</p>
-</section>
+<section><div class="wrap sect context">
+  <div>
+    <h2>What this means</h2>
+    <p class="intro">Last reviewed {{ common.litigation_context.last_reviewed }}.</p>
+  </div>
+  <div>
+    <p>{{ common.litigation_context.text }}</p>
+    <ul class="sources">{% for s in common.litigation_context.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
+  </div>
+</div></section>
+
+<section><div class="wrap sect">
+  <div>
+    <h2>What you can do</h2>
+    <p class="intro">{{ common.what_you_can_do|length }} routes. None is a guarantee.</p>
+  </div>
+  <ul class="routes">
+    {% for a in common.what_you_can_do %}
+    <li>
+      <span><b>{{ a.title }}.</b> {{ a.short }}</span>
+      <ul class="sources">{% for s in a.sources %}<li><a href="{{ s.url }}">{{ s.title }}</a>, {{ s.date }}</li>{% endfor %}</ul>
+    </li>
+    {% endfor %}
+  </ul>
+</div></section>
+
+<section><div class="wrap sect">
+  <div><h2>Keep a copy</h2></div>
+  <div class="downloads">
+    <div class="btns">
+      <a class="btn{% if not listed %} quiet{% endif %}" rel="nofollow" href="/r/{{ report.report_id }}.pdf">Download the evidence (PDF)</a>
+      <a class="btn quiet" rel="nofollow" href="/r/{{ report.report_id }}.json">JSON</a>
+      <a class="btn quiet" href="/">Check another name</a>
+    </div>
+    <p class="share">Share this page <code>{{ base_url }}/r/{{ report.report_id }}</code></p>
+  </div>
+</div></section>
+
+<section><div class="wrap sect">
+  <div><h2 style="font-size:19px">Provenance</h2></div>
+  <div class="provenance">
+    <p>JSON export SHA-256 <code>{{ sha256 }}</code></p>
+    <details>
+      <summary>Dataset versions indexed</summary>
+      <div class="tbl"><table>
+        <tr><th>Dataset</th><th>File</th><th>Rows</th><th>Loaded</th><th>SHA-256</th></tr>
+        {% for name, files in report.dataset_versions.items() %}{% for f in files %}
+        <tr><td>{{ name }}</td><td>{{ f.file }}</td><td>{{ "{:,}".format(f.rows or 0) }}</td><td>{{ f.loaded_at }}</td><td>{% if f.sha256 %}<code>{{ f.sha256[:16] }}…</code>{% else %}<em>{{ f.status }}</em>{% endif %}</td></tr>
+        {% endfor %}{% endfor %}
+      </table></div>
+    </details>
+    <p class="legal">{{ presence_note }} {{ report.not_legal_advice }} If you are the subject of this page and want it removed, see <a href="/about#removal">removals</a>.</p>
+  </div>
+</div></section>
 <script>
 // Thumbnails become players only on click, so the page stays light and YouTube sets no
 // cookies until the visitor asks to hear a clip. Playback is bounded to the dataset's window.

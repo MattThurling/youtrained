@@ -49,6 +49,7 @@ class LitigationContext(_Strict):
 
 class Action(_Strict):
     title: str
+    short: str  # one sentence, shown on the web report; `text` is the full version (PDF)
     text: str
     sources: list[Source]
 
@@ -74,6 +75,7 @@ class Descriptor(_Strict):
         ]
         out += [(f"cited_by[{c.model}]", c.note) for c in self.usage.cited_by]
         out += [(f"what_you_can_do[{a.title}]", a.text) for a in self.what_you_can_do]
+        out += [(f"what_you_can_do[{a.title}].short", a.short) for a in self.what_you_can_do]
         return out
 
 

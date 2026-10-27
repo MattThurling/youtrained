@@ -1,39 +1,35 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="wrap">
 <section class="hero">
   <h1>Has your music been used to train AI?</h1>
-  <p class="lede">Type your artist or channel name. We check the public datasets AI labs use to train and test music models and show you what's listed.</p>
+  <p class="lede">Type your artist or channel name. We check the public datasets AI labs use to train and test music models.</p>
   <form method="post" action="/check" class="check">
     <label for="name" class="visually-hidden">Your artist or channel name</label>
-    <input id="name" name="name" type="text" placeholder="Your artist or channel name" value="{{ name or '' }}" autofocus autocomplete="off">
-    <button type="submit">Check</button>
+    <div class="field">
+      <input id="name" name="name" type="text" placeholder="Your artist or channel name" value="{{ name or '' }}" autofocus autocomplete="off">
+      <button type="submit">Check</button>
+    </div>
     <details class="alt" {% if youtube or error %}open{% endif %}>
-      <summary>Or paste your YouTube channel link</summary>
+      <summary>Or paste your YouTube channel link to check every upload</summary>
       <label for="youtube" class="visually-hidden">YouTube channel link</label>
       <input id="youtube" name="youtube" type="text" placeholder="https://www.youtube.com/@yourchannel" value="{{ youtube or '' }}">
-      <p class="small">We'll list every upload on the channel and check each one. Nothing is uploaded or listened to.</p>
     </details>
   </form>
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <p class="checks">Checked against <b>LAION-DISCO-12M</b>, <b>AudioSet</b> and <b>MusicCaps</b>. They are lists of YouTube links, not audio. Nothing of yours is uploaded or listened to.</p>
 </section>
 <section class="how">
   <h2>How it works</h2>
   <ol class="steps">
-    <li><strong>You tell us who you are.</strong> A name is enough. A channel link lets us check every upload.</li>
-    <li><strong>We look you up in three public datasets</strong> that AI labs use to train and test music models. They're lists of YouTube links, not audio, so nothing of yours is uploaded.</li>
-    <li><strong>You get a plain answer</strong> with the evidence underneath: which dataset, which song or video, and what you can do about it.</li>
+    <li>You tell us who you are. A name is enough. A channel link lets us check every upload.</li>
+    <li>We look up your video ids in three public datasets that AI labs use to train and test music models.</li>
+    <li>You get a plain answer with the evidence underneath: which dataset, which song or video, and what you can do.</li>
   </ol>
 </section>
 <section class="explore">
   <h2>Or browse</h2>
-  <p><a href="/artists">Artists</a> with the most songs listed · <a href="/channels">Channels</a> with the most videos listed · <a href="/labels">Labels</a> the datasets use to describe the music.</p>
+  <p><a href="/artists">Artists</a> with the most songs listed, <a href="/channels">channels</a> with the most videos listed, and the <a href="/labels">labels</a> the datasets use to describe the music.</p>
 </section>
-<section class="datasets">
-  <h2>What we check against</h2>
-  <ul>
-    <li><strong>LAION-DISCO-12M</strong> (LAION, 2024): 12 million songs on YouTube Music, listed for training general music models.</li>
-    <li><strong>AudioSet</strong> (Google, 2017): about a million ten-second YouTube clips labelled as music, used to train and test audio models.</li>
-    <li><strong>MusicCaps</strong> (Google, 2023): 5,521 described clips, the standard test for text-to-music models.</li>
-  </ul>
-</section>
+</div>
 {% endblock %}

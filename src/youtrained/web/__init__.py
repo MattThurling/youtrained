@@ -46,12 +46,13 @@ from ..platforms import (
 from ..report import (
     build_report,
     clip_urls,
+    common_text,
     headline,
     overview_cards,
     prerendered_channel_report,
     report_json,
     report_sha256,
-    verdict,
+    verdict_parts,
 )
 from ..urls import UnsupportedUrl, parse_youtube_channel_url
 
@@ -528,12 +529,15 @@ def create_app(
             slugs = cache.get(conn).slugs
         finally:
             conn.close()
+        yn, verdict_text = verdict_parts(report)
         return render(
             "report.html",
             request,
             report=report,
             headline=headline(report),
-            verdict=verdict(report),
+            yn=yn,
+            verdict_text=verdict_text,
+            common=common_text(report),
             cards=overview_cards(report),
             sha256=report_sha256(report),
             base_url=str(request.base_url).rstrip("/"),

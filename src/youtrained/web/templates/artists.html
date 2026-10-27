@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Artists in LAION-DISCO-12M – YouTrained{% endblock %}
 {% block content %}
-<section>
+<div class="wrap">
+<section class="browse">
   <h1>Artists</h1>
-  <p>Artists whose YouTube Music catalogues are listed in LAION-DISCO-12M, ranked by number of songs. {{ "{:,}".format(total) }} artists{% if q %} match "{{ q }}"{% endif %}.</p>
+  <p class="muted">Artists whose YouTube Music catalogues are listed in LAION-DISCO-12M, ranked by number of songs. {{ "{:,}".format(total) }} artists{% if q %} match "{{ q }}"{% endif %}.</p>
   <form method="get" action="/artists" class="search"><input type="search" name="q" value="{{ q }}" placeholder="Search artist names" aria-label="Search artist names"><button type="submit">Search</button></form>
   <ol class="ranked" start="{{ (page - 1) * 50 + 1 }}">
     {% for artist_id, name, n in rows %}
@@ -21,6 +22,7 @@
     {% if page < pages %}<a href="/artists?page={{ page + 1 }}{% if q %}&q={{ q|urlencode }}{% endif %}">Next ›</a>{% endif %}
   </nav>
   {% endif %}
-  <p class="small">{{ presence_note }}</p>
+  <p class="small muted">{{ presence_note }}</p>
 </section>
+</div>
 {% endblock %}
