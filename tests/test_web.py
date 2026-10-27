@@ -288,6 +288,53 @@ def test_downloads_are_cacheable_and_pdf_is_rate_limited(client, monkeypatch):
     assert r.status_code == 429 and r.headers["retry-after"] == "60"
 
 
+def test_pdf_render_failure_is_503_and_releases_lock(client, monkeypatch):
+    from youtrained import web
+    from youtrained.pdf import PdfFailed
+
+    client.post("/check", data={"youtube": "@someband"})
+    client.app.state.pdf_limiter.stamps.clear()
+
+    def boom(html, base_url=None):
+        raise PdfFailed("child died")
+
+    monkeypatch.setattr(web, "html_to_pdf", boom)
+    r = client.get("/r/yt_someband.pdf")
+    assert r.status_code == 503 and r.headers["retry-after"] == "60"
+    assert r.headers["cache-control"] == "no-store"
+    assert not client.app.state.pdf_lock.locked(), "lock must be released after a failure"
+    monkeypatch.setattr(web, "html_to_pdf", lambda html, base_url=None: b"%PDF-fake")
+    assert client.get("/r/yt_someband.pdf").status_code == 200
+
+
+def test_pdf_renders_one_at_a_time(client, monkeypatch):
+    from youtrained import web
+
+    client.post("/check", data={"youtube": "@someband"})
+    client.app.state.pdf_limiter.stamps.clear()
+    monkeypatch.setattr(web, "html_to_pdf", lambda html, base_url=None: b"%PDF-fake")
+    lock = client.app.state.pdf_lock
+    assert lock.acquire(blocking=False)
+    try:
+        r = client.get("/r/yt_someband.pdf")
+        assert r.status_code == 503 and r.headers["retry-after"] == "30"
+    finally:
+        lock.release()
+    assert client.get("/r/yt_someband.pdf").status_code == 200
+
+
+def test_html_to_pdf_runs_in_a_child_process():
+    """Real subprocess round trip: a PDF if WeasyPrint is installed, else the install hint."""
+    from youtrained import pdf
+
+    try:
+        out = pdf.html_to_pdf("<html><body><p>hello</p></body></html>")
+    except pdf.PdfUnavailable as exc:
+        assert "WeasyPrint" in str(exc)
+    else:
+        assert out[:5] == b"%PDF-"
+
+
 def test_canonical_links(client):
     assert '<link rel="canonical" href="http://testserver/">' in client.get("/").text
     page = client.get("/label/music?subtree=1").text

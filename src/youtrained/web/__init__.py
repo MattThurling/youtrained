@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 import sqlite3
+import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -32,7 +34,7 @@ from ..artists import (
 from ..check import run_check
 from ..descriptors import load_descriptor
 from ..og import render_og_png
-from ..pdf import PdfUnavailable, html_to_pdf
+from ..pdf import PdfFailed, PdfUnavailable, html_to_pdf
 from ..platforms import (
     PlatformCache,
     PlatformUnavailable,
@@ -66,6 +68,7 @@ def _static_version() -> str:
 
 
 STATIC_VERSION = _static_version()
+log = logging.getLogger(__name__)
 LABEL_PAGE_SIZE = 50
 PAGE_SIZE = 50
 SITEMAP_CHUNK = 50_000
@@ -129,6 +132,9 @@ def create_app(
     app.state.label_cache = cache
     pdf_limiter = _RateLimiter(PDF_PER_MINUTE)
     app.state.pdf_limiter = pdf_limiter
+    # One render at a time: each is a child process of a few hundred MB on a 700 MB container.
+    pdf_lock = threading.Lock()
+    app.state.pdf_lock = pdf_lock
 
     def connect() -> sqlite3.Connection:
         conn = db.connect(path)
@@ -469,17 +475,32 @@ def create_app(
                 status_code=429,
                 headers={"Retry-After": "60", "Cache-Control": "no-store"},
             )
-        html = templates.get_template("report_pdf.html").render(
-            report=report,
-            headline=headline(report),
-            sha256=report_sha256(report),
-            version=__version__,
-            base_url=str(request.base_url).rstrip("/"),
-        )
+        if not pdf_lock.acquire(blocking=False):
+            return Response(
+                "A PDF is already being rendered; please try again shortly.",
+                status_code=503,
+                headers={"Retry-After": "30", "Cache-Control": "no-store"},
+            )
         try:
+            html = templates.get_template("report_pdf.html").render(
+                report=report,
+                headline=headline(report),
+                sha256=report_sha256(report),
+                version=__version__,
+                base_url=str(request.base_url).rstrip("/"),
+            )
             pdf = html_to_pdf(html)
         except PdfUnavailable as exc:
             return JSONResponse({"error": str(exc)}, status_code=501)
+        except PdfFailed:
+            log.exception("PDF render failed for %s", report_id)
+            return Response(
+                "The PDF could not be generated right now; please try again in a minute.",
+                status_code=503,
+                headers={"Retry-After": "60", "Cache-Control": "no-store"},
+            )
+        finally:
+            pdf_lock.release()
         return Response(
             pdf,
             media_type="application/pdf",

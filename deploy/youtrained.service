@@ -1,4 +1,5 @@
 # /etc/systemd/system/youtrained.service — runs the app container from GHCR.
+# deploy/deploy.sh pulls the image before restarting; a crash restart must not wait on GHCR.
 [Unit]
 Description=YouTrained web app
 After=docker.service
@@ -10,12 +11,13 @@ RestartSec=5
 EnvironmentFile=/opt/youtrained/.env
 ExecStartPre=-/usr/bin/docker stop youtrained
 ExecStartPre=-/usr/bin/docker rm youtrained
-ExecStartPre=/usr/bin/docker pull ghcr.io/${IMAGE_REPO}:latest
+# --memory-swap equal to --memory: no swap for the container. With swap allowed, a leak made the
+# app thrash for hours (every request a 502) before the kernel finally killed it.
 ExecStart=/usr/bin/docker run --name youtrained --rm \
   -p 127.0.0.1:8080:8080 \
   -v /opt/youtrained/data:/data \
   --env-file /opt/youtrained/.env \
-  --memory=700m \
+  --memory=700m --memory-swap=700m \
   ghcr.io/${IMAGE_REPO}:latest
 ExecStop=/usr/bin/docker stop youtrained
 

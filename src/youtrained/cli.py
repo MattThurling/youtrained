@@ -308,7 +308,13 @@ def serve(
     reload: Annotated[bool, typer.Option(help="Auto-reload on code changes (dev).")] = False,
 ) -> None:
     """Run the web UI."""
+    import logging
+
     import uvicorn
+
+    # uvicorn configures its own loggers only; this makes the app's warnings and tracebacks
+    # (e.g. a failed PDF render) reach stderr and hence `journalctl -u youtrained`.
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(name)s: %(message)s")
 
     from .web import create_app
 
