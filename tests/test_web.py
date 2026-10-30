@@ -224,11 +224,8 @@ def test_labels_index_and_label_page(client, shared_id):
     r = client.get("/label/guitar")
     assert r.status_code == 200
     assert shared_id in r.text, "the shared fixture segment is labelled Guitar"
-    assert (
-        "play the clip used" in r.text
-        and "start=10&amp;end=20" in r.text
-        or "start=10&end=20" in r.text
-    )
+    assert 'data-start="10" data-end="20"' in r.text, "inline clip player, as on reports"
+    assert '<a href="/label/guitar">Guitar</a>' in r.text, "full label list, as on reports"
     assert '<meta name="robots" content="noindex">' in r.text, "fewer than 5 videos"
     assert client.get("/label/nope").status_code == 404
     assert client.get("/label/guitar?page=99").status_code == 404

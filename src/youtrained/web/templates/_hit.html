@@ -17,6 +17,7 @@
       {% if hit.extra.label_names %}{% if hit.start_s is not none %} · {% endif %}Labels: {% for name in hit.extra.label_names %}{% if label_slugs and name in label_slugs %}<a href="/label/{{ label_slugs[name] }}">{{ name }}</a>{% else %}{{ name }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
       {% if hit.artist or hit.title %}{% if hit.start_s is not none or hit.extra.label_names %} · {% endif %}Listed as {{ hit.artist or "?" }} – {{ hit.title or "?" }}{% if hit.extra.album_name %} ({{ hit.extra.album_name }}){% endif %}{% endif %}
       {% if hit.urls.watch and hit.start_s is none %} · <a href="{{ hit.urls.watch }}">Watch on YouTube</a>{% endif %}
+      {% if hit.channel_id %} · Uploaded by <a href="{{ report_url("yt_" ~ hit.channel_id, hit.channel_title) }}">{{ hit.channel_title or hit.channel_id }}</a>{% endif %}
     </p>
     <p class="ids">{{ hit.key_type }} {{ hit.key }} · row {{ hit.dataset_row_id }}</p>
   </div>

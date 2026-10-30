@@ -16,17 +16,13 @@
   <p class="children small">Sub-labels: {% for c, n in children %}<a href="/label/{{ c.slug }}">{{ c.name }}</a> <span class="count">{{ "{:,}".format(n) }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</p>
   {% endif %}
 
-  <div class="videos">
-    {% if not rows %}<p>No indexed videos carry this label.</p>{% endif %}
-    {% for vid, title, channel_id, channel_title in rows %}
-    <article class="video">
-      <a class="thumb" href="{{ clips[vid].watch if vid in clips else 'https://www.youtube.com/watch?v=' ~ vid }}"><img src="https://i.ytimg.com/vi/{{ vid }}/mqdefault.jpg" alt="" loading="lazy" width="160" height="90"></a>
-      <div>
-        <div class="title">{{ title or vid }}</div>
-        <div class="small muted">{% if channel_id %}<a href="{{ report_url("yt_" ~ channel_id, channel_title) }}">{{ channel_title }}</a> · {% endif %}<code>{{ vid }}</code>{% if vid in clips and clips[vid].clip %} · <a href="{{ clips[vid].clip }}">play the clip used</a>{% endif %}</div>
-      </div>
-    </article>
-    {% endfor %}
+  <div class="evidence">
+  <section class="group">
+    <div class="hits">
+      {% if not hits %}<p class="muted">No indexed videos carry this label.</p>{% endif %}
+      {% for hit in hits %}{% include "_hit.html" %}{% endfor %}
+    </div>
+  </section>
   </div>
   {% if pages > 1 %}
   <nav class="pager">

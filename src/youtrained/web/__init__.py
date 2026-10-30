@@ -34,6 +34,7 @@ from ..artists import (
 from ..check import run_check
 from ..descriptors import load_descriptor
 from ..links import artist_id_from_path, artist_url, report_id_from_path, report_url
+from ..models import KEY_YOUTUBE_VIDEO, Hit
 from ..og import render_og_png
 from ..pdf import PdfFailed, PdfUnavailable, html_to_pdf
 from ..platforms import (
@@ -643,11 +644,28 @@ def create_app(
             rows = L.label_videos_page(
                 conn, label.id, page=page, per_page=LABEL_PAGE_SIZE, subtree=bool(subtree)
             )
-            clips = {}
+            # One AudioSet row per video, rendered with the same partial as report evidence
+            # so the clip player and the full label list look the same everywhere.
+            by_key: dict[str, Hit] = {}
             if rows:
-                for h in db.find_hits(conn, "youtube_video", [r[0] for r in rows]):
-                    if h.dataset == "audioset" and h.key not in clips:
-                        clips[h.key] = clip_urls(h)
+                for h in db.find_hits(conn, KEY_YOUTUBE_VIDEO, [r[0] for r in rows]):
+                    if h.dataset == "audioset" and h.key not in by_key:
+                        by_key[h.key] = h
+            hits = []
+            for vid, title, channel_id, channel_title in rows:
+                h = by_key.get(vid)
+                if h is None:
+                    continue
+                hits.append(
+                    {
+                        **h.to_dict(),
+                        "your_title": title,
+                        "urls": clip_urls(h),
+                        "channel_id": channel_id,
+                        "channel_title": channel_title,
+                    }
+                )
+            slugs = cache.get(conn).slugs
             children = [(c, counts.get(c.id, 0)) for c in L.label_children(conn, label.id)]
             crumbs = L.breadcrumb(conn, label)
             parents = L.label_parents(conn, label.id)
@@ -664,8 +682,9 @@ def create_app(
             subtree_total=subtree_total,
             total=total,
             subtree=bool(subtree),
-            rows=rows,
-            clips=clips,
+            hits=hits,
+            label_slugs=slugs,
+            report={"datasets": {"audioset": {"name": load_descriptor("audioset").name}}},
             children=children,
             crumbs=crumbs,
             parents=parents,
