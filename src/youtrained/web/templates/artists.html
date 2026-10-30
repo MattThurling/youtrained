@@ -10,7 +10,7 @@
     {% for artist_id, name, n in rows %}
     <li>
       <span class="rank">{{ loop.index + (page - 1) * 50 }}</span>
-      <a class="name" href="/a/{{ artist_id }}">{{ name or artist_id }}</a>
+      <a class="name" href="{{ artist_url(artist_id, name) }}">{{ name or artist_id }}</a>
       <span class="count">{{ "{:,}".format(n) }} song{{ "" if n == 1 else "s" }}</span>
     </li>
     {% endfor %}

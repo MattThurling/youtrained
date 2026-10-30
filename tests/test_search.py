@@ -59,7 +59,7 @@ def client(tmp_path, cache_dir):
 def test_home_has_question_and_name_box(client):
     home = client.get("/").text
     assert "<h1>Has your music been used to train AI?</h1>" in home
-    assert 'name="name"' in home and 'name="youtube"' in home
+    assert 'name="q"' in home and 'name="youtube"' not in home, "one box, not two"
 
 
 def test_posting_a_name_goes_to_search(client):
@@ -71,21 +71,21 @@ def test_posting_a_name_goes_to_search(client):
 
 def test_exact_artist_match_redirects(client):
     r = client.get("/search?q=artist 3", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/a/UCartist0000000000000003"
+    assert r.status_code == 303 and r.headers["location"] == "/a/artist-3-UCartist0000000000000003"
 
 
 def test_ambiguous_name_lists_both_kinds(client):
     r = client.get("/search?q=some band")  # fixture has artist "Some Band" and channel "Some Band"
     assert r.status_code == 200
     assert "Is one of these you?" in r.text
-    assert 'href="/a/UCartist0000000000000010"' in r.text and "song listed" in r.text
-    assert f'href="/r/yt_{CHAN}"' in r.text and "video listed" in r.text
+    assert 'href="/a/some-band-UCartist0000000000000010"' in r.text and "song listed" in r.text
+    assert f'href="/r/some-band-yt_{CHAN}"' in r.text and "video listed" in r.text
     assert '<meta name="robots" content="noindex">' in r.text
 
 
 def test_prefix_search_and_empty_state(client):
     r = client.get("/search?q=artist")
-    assert r.status_code == 200 and r.text.count('href="/a/UCartist') >= 5
+    assert r.status_code == 200 and r.text.count('href="/a/artist-') >= 5
     r = client.get("/search?q=zzzzqq")
     assert r.status_code == 200 and "We couldn't find that name" in r.text and "good news" in r.text
     assert client.get("/search", follow_redirects=False).status_code == 303
@@ -93,3 +93,15 @@ def test_prefix_search_and_empty_state(client):
 
 def test_robots_disallows_search(client):
     assert "Disallow: /search" in client.get("/robots.txt").text
+
+
+def test_single_box_routes_names_and_links(client):
+    r = client.post("/check", data={"q": "Artist 3"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/search?q=Artist%203"
+    r = client.post("/check", data={"q": "Some Band"}, follow_redirects=False)
+    assert r.status_code == 303 and "not a YouTube URL" not in r.text, "names never hit the parser"
+    r = client.post("/check", data={"q": "https://youtu.be/dQw4w9WgXcQ"})
+    assert r.status_code == 400 and "channel link instead" in r.text
+    assert 'value="https://youtu.be/dQw4w9WgXcQ"' in r.text, "the box keeps what was typed"
+    r = client.post("/check", data={"q": "  "})
+    assert r.status_code == 400 and "Type your artist name" in r.text

@@ -75,11 +75,13 @@ labelled with the basis of the match.
 uv run youtrained serve                 # http://127.0.0.1:8000
 ```
 
-One input box. Submitting a channel link redirects to a stable report URL, `/r/yt_<channel id>`,
-which is safe to share and is overwritten when the channel is checked again. Each report has
-`/r/<id>.json` (with an `X-Report-SHA256` header, the hash is also printed on the page),
-`/r/<id>.pdf` (evidence report) and `/r/<id>/og.png` (the share image used by the Open Graph
-tags). Templates live in `src/youtrained/web/templates`, CSS in `src/youtrained/web/static`.
+One input box: an artist name goes to search, a handle or channel link to the channel check.
+A check redirects to a stable report URL, `/r/<channel slug>-yt_<channel id>` (the slug is
+cosmetic; the bare `/r/yt_<channel id>` resolves too), which is safe to share and is
+overwritten when the channel is checked again. Artist pages are `/a/<artist slug>-<artist id>`
+the same way. Each report has `/r/<id>.json` (with an `X-Report-SHA256` header, the hash is
+also printed on the page), `/r/<id>.pdf` (evidence report) and `/r/<id>/og.png` (the share
+image used by the Open Graph tags), all at the bare id. Templates live in `src/youtrained/web/templates`, CSS in `src/youtrained/web/static`.
 
 PDF export uses WeasyPrint, which needs pango installed on the machine:
 

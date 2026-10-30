@@ -33,6 +33,7 @@ from ..artists import (
 )
 from ..check import run_check
 from ..descriptors import load_descriptor
+from ..links import artist_id_from_path, artist_url, report_id_from_path, report_url
 from ..og import render_og_png
 from ..pdf import PdfFailed, PdfUnavailable, html_to_pdf
 from ..platforms import (
@@ -54,10 +55,11 @@ from ..report import (
     report_sha256,
     verdict_parts,
 )
-from ..urls import UnsupportedUrl, parse_youtube_channel_url
+from ..urls import UnsupportedUrl, looks_like_channel, parse_youtube_channel_url
 
 HERE = Path(__file__).parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
+templates.env.globals.update(artist_url=artist_url, report_url=report_url)
 
 
 def _static_version() -> str:
@@ -98,17 +100,30 @@ _CACHE_TTL_S = 3600
 
 
 class _Cached:
-    """Per-process cache of the label slug map and direct counts (one index scan each)."""
+    """Per-process cache of the label slug map and direct counts (one index scan each), plus
+    the artist, channel and labelled-video totals the home page shows."""
 
     def __init__(self) -> None:
         self.at: float | None = None  # None = never filled; monotonic() is small at boot
         self.slugs: dict[str, str] = {}
         self.counts: dict[int, int] = {}
+        self.artists = 0
+        self.channels = 0
+        self.labelled_videos = 0
 
     def get(self, conn: sqlite3.Connection) -> _Cached:
         if self.at is None or time.monotonic() - self.at > _CACHE_TTL_S:
             self.slugs = L.label_slugs(conn)
             self.counts = L.direct_counts(conn)
+            self.artists = count_artists_above(conn, 1)
+            self.channels = conn.execute(
+                "SELECT COUNT(*) FROM channel_stats WHERE video_count >= 1"
+            ).fetchone()[0]
+            # Every indexed AudioSet video carries at least one Music-branch label (about a
+            # second over a million rows, so it lives in this hourly cache).
+            self.labelled_videos = conn.execute(
+                "SELECT COUNT(DISTINCT video_id) FROM video_labels"
+            ).fetchone()[0]
             self.at = time.monotonic()
         return self
 
@@ -185,9 +200,26 @@ def create_app(
     def pages_for(total: int, per_page: int = PAGE_SIZE) -> int:
         return max(1, -(-total // per_page))
 
+    def home(request: Request, status: int = 200, **ctx) -> HTMLResponse:
+        """The home page, with the browse-row totals from the hourly cache."""
+        conn = connect()
+        try:
+            c = cache.get(conn)
+        finally:
+            conn.close()
+        return render(
+            "index.html",
+            request,
+            status,
+            artists=c.artists,
+            channels=c.channels,
+            labelled_videos=c.labelled_videos,
+            **ctx,
+        )
+
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request):
-        return render("index.html", request)
+        return home(request)
 
     @app.get("/about", response_class=HTMLResponse)
     def about(request: Request):
@@ -251,8 +283,11 @@ def create_app(
             noindex=bool(q),
         )
 
-    @app.get("/a/{artist_id}", response_class=HTMLResponse)
-    def artist_page(request: Request, artist_id: str, page: int = Query(1, ge=1)):
+    @app.get("/a/{slug_id}", response_class=HTMLResponse)
+    def artist_page(request: Request, slug_id: str, page: int = Query(1, ge=1)):
+        artist_id = artist_id_from_path(slug_id)
+        if artist_id is None:
+            raise HTTPException(404, "no such artist")
         conn = connect()
         try:
             if db.is_removed(conn, f"a_{artist_id}"):
@@ -272,6 +307,7 @@ def create_app(
             desc = load_descriptor("laion_disco_12m")
         finally:
             conn.close()
+        base = str(request.base_url).rstrip("/")
         return render(
             "artist.html",
             request,
@@ -280,6 +316,9 @@ def create_app(
             page=page,
             pages=pages,
             dataset=desc,
+            canonical=base
+            + artist_url(artist_id, artist.name)
+            + (f"?page={page}" if page > 1 else ""),
             noindex=artist.song_count < config.DISCOVERY_MIN,
         )
 
@@ -334,20 +373,19 @@ def create_app(
         base = str(request.base_url).rstrip("/")
         conn = connect()
         try:
-            ids = [
-                r[0]
-                for r in conn.execute(
-                    "SELECT channel_id FROM channel_stats WHERE video_count >= ? "
-                    "ORDER BY channel_id LIMIT ? OFFSET ?",
-                    (config.DISCOVERY_MIN, SITEMAP_CHUNK, n * SITEMAP_CHUNK),
-                )
-            ]
+            ids = conn.execute(
+                "SELECT channel_id, channel_title FROM channel_stats WHERE video_count >= ? "
+                "ORDER BY channel_id LIMIT ? OFFSET ?",
+                (config.DISCOVERY_MIN, SITEMAP_CHUNK, n * SITEMAP_CHUNK),
+            ).fetchall()
             removed = db.removed_ids(conn)
         finally:
             conn.close()
         if not ids and n > 0:
             raise HTTPException(404)
-        return _urlset([f"{base}/r/yt_{c}" for c in ids if f"yt_{c}" not in removed])
+        return _urlset(
+            [base + report_url(f"yt_{c}", t) for c, t in ids if f"yt_{c}" not in removed]
+        )
 
     @app.get("/sitemap-artists-{n}.xml")
     def sitemap_artists(request: Request, n: int):
@@ -362,7 +400,7 @@ def create_app(
             conn.close()
         if not ids and n > 0:
             raise HTTPException(404)
-        return _urlset([f"{base}/a/{a}" for a in ids if f"a_{a}" not in removed])
+        return _urlset([base + artist_url(a, name) for a, name in ids if f"a_{a}" not in removed])
 
     @app.get("/search", response_class=HTMLResponse)
     def search(request: Request, q: str = Query("", max_length=100)):
@@ -387,28 +425,32 @@ def create_app(
         # One exact-name match on one side and none on the other: go straight there. Partial
         # matches ("bonobos", "RadioBonobo") don't count against an exact hit.
         if len(exact_a) == 1 and not exact_c:
-            return RedirectResponse(f"/a/{exact_a[0][0]}", status_code=303)
+            return RedirectResponse(artist_url(exact_a[0][0], exact_a[0][1]), status_code=303)
         if len(exact_c) == 1 and not exact_a:
-            return RedirectResponse(f"/r/yt_{exact_c[0][0]}", status_code=303)
+            return RedirectResponse(
+                report_url(f"yt_{exact_c[0][0]}", exact_c[0][1]), status_code=303
+            )
         return render("search.html", request, q=q, artists=artists, channels=channels, noindex=True)
 
     @app.post("/check")
-    def check(request: Request, youtube: str = Form(""), name: str = Form("")):
+    def check(request: Request, q: str = Form(""), youtube: str = Form(""), name: str = Form("")):
+        """One box. A handle, channel id or YouTube link goes to the channel lookup; anything
+        else is a name and goes to search. `youtube` and `name` are the older field names,
+        still used by the prerendered report's "check all my uploads" form."""
         youtube = youtube.strip()
-        name = name.strip()
-        if not youtube and name:
-            return RedirectResponse(f"/search?q={quote(name)}", status_code=303)
+        raw = (q or name).strip()
         if not youtube:
-            return render(
-                "index.html",
-                request,
-                400,
-                error="Type your artist or channel name, or paste your YouTube channel link.",
-            )
+            if not raw:
+                return home(
+                    request, 400, error="Type your artist name or paste your YouTube channel link."
+                )
+            if not looks_like_channel(raw):
+                return RedirectResponse(f"/search?q={quote(raw)}", status_code=303)
+            youtube = raw
         try:
             ref = parse_youtube_channel_url(youtube)
         except UnsupportedUrl as exc:
-            return render("index.html", request, 400, error=str(exc), youtube=youtube)
+            return home(request, 400, error=str(exc), q=youtube)
         conn = connect()
         try:
             client = youtube_client(conn)
@@ -447,10 +489,12 @@ def create_app(
                 report["summary"]["checked"] = max(checked_override, result.checked)
             db.save_report(conn, report)
         except PlatformUnavailable as exc:
-            return render("index.html", request, 503, error=str(exc), youtube=youtube)
+            return home(request, 503, error=str(exc), q=youtube)
         finally:
             conn.close()
-        return RedirectResponse(f"/r/{report['report_id']}", status_code=303)
+        return RedirectResponse(
+            report_url(report["report_id"], report["subject"]["title"]), status_code=303
+        )
 
     # Export routes are registered before the page route: a bare {report_id} would otherwise
     # swallow "yt_x.json" as a report id.
@@ -521,8 +565,11 @@ def create_app(
             headers={"Cache-Control": DOWNLOAD_CACHE},
         )
 
-    @app.get("/r/{report_id}", response_class=HTMLResponse)
-    def report_page(request: Request, report_id: str):
+    @app.get("/r/{slug_id}", response_class=HTMLResponse)
+    def report_page(request: Request, slug_id: str):
+        report_id = report_id_from_path(slug_id)
+        if report_id is None:
+            raise HTTPException(404, "no such report")
         report = load_report(report_id)
         conn = connect()
         try:
@@ -541,6 +588,8 @@ def create_app(
             cards=overview_cards(report),
             sha256=report_sha256(report),
             base_url=str(request.base_url).rstrip("/"),
+            canonical=str(request.base_url).rstrip("/")
+            + report_url(report_id, report["subject"]["title"]),
             label_slugs=slugs,
             noindex=report["summary"]["matched_keys"] + report["summary"].get("artist_songs", 0)
             < config.DISCOVERY_MIN,

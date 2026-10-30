@@ -182,14 +182,13 @@ def artists_page(
 
 def artists_above(
     conn: sqlite3.Connection, min_songs: int, *, limit: int, offset: int
-) -> list[str]:
-    return [
-        r[0]
-        for r in conn.execute(
-            "SELECT artist_id FROM artists WHERE song_count >= ? ORDER BY artist_id LIMIT ? OFFSET ?",
-            (min_songs, limit, offset),
-        )
-    ]
+) -> list[tuple[str, str | None]]:
+    """(artist_id, name) pairs for the sitemap, in id order."""
+    return conn.execute(
+        "SELECT artist_id, name FROM artists WHERE song_count >= ? "
+        "ORDER BY artist_id LIMIT ? OFFSET ?",
+        (min_songs, limit, offset),
+    ).fetchall()
 
 
 def count_artists_above(conn: sqlite3.Connection, min_songs: int) -> int:

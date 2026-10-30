@@ -10,7 +10,7 @@
     {% for channel_id, title, n in rows %}
     <li>
       <span class="rank">{{ loop.index + (page - 1) * 50 }}</span>
-      <a class="name" href="/r/yt_{{ channel_id }}">{{ title or channel_id }}</a>
+      <a class="name" href="{{ report_url("yt_" ~ channel_id, title) }}">{{ title or channel_id }}</a>
       <span class="count">{{ "{:,}".format(n) }} video{{ "" if n == 1 else "s" }}</span>
     </li>
     {% endfor %}

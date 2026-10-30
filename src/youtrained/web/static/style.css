@@ -82,12 +82,11 @@ form.check { display: grid; gap: 8px; margin-top: 8px; max-width: 560px; }
 form.check .field { display: flex; gap: 8px; }
 form.check input { flex: 1; min-width: 0; font: inherit; padding: 13px 14px; border: 2px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
 form.check input:focus { outline: none; border-color: var(--fg); }
-form.check details.alt summary { cursor: pointer; color: var(--muted); font-size: 15px; }
-form.check details.alt input { margin-top: 8px; width: 100%; }
 .checks { font-size: 14px; color: var(--muted); }
 .checks b { font-weight: 600; color: var(--fg); }
-ol.steps { margin: 0; padding-left: 22px; max-width: 60ch; display: grid; gap: 8px; }
-.explore p { max-width: 60ch; }
+.browse-row { font-size: 15px; color: var(--muted); }
+.browse-row a { color: var(--fg); font-weight: 600; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.browse-row a:hover { text-decoration-color: currentColor; }
 
 /* buttons */
 .btn, form.check button, form.search button, form.inline button {

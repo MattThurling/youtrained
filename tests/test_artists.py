@@ -130,7 +130,7 @@ def test_verdict_and_cards(conn, cache_dir):
     )
     assert (
         verdict(songs_only)
-        == "Yes. 1 of your song is listed in a dataset used to train AI music models."
+        == "Yes. x has 1 song listed in a dataset used to train AI music models."
     )
     [card] = overview_cards(songs_only)
     assert (
@@ -154,7 +154,7 @@ def test_verdict_and_cards(conn, cache_dir):
     )
     assert (
         verdict(videos_only)
-        == "Yes. 1 of your video is listed in datasets used to train and test AI models."
+        == "Yes. x has 1 video listed in datasets used to train and test AI models."
     )
     names = [c["dataset"] for c in overview_cards(videos_only)]
     assert "audioset" in names and "laion_disco_12m" not in names, (

@@ -101,7 +101,7 @@ def test_channels_index_ranked_and_searchable(client):
     r = client.get("/channels")
     assert r.status_code == 200
     assert r.text.index("Big Channel") < r.text.index("Small "), "ranked by video count"
-    assert f'href="/r/yt_{BIG}"' in r.text
+    assert f'href="/r/big-channel-yt_{BIG}"' in r.text
     r = client.get("/channels?q=big")
     assert "1 channels match" in r.text and "Small " not in r.text
     assert '<meta name="robots" content="noindex">' in r.text, "search results are noindex"
@@ -110,7 +110,7 @@ def test_channels_index_ranked_and_searchable(client):
 
 def test_artists_index_and_artist_page(client, shared_id):
     r = client.get("/artists")
-    assert r.status_code == 200 and 'href="/a/UCartist0000000000000010"' in r.text
+    assert r.status_code == 200 and 'href="/a/some-band-UCartist0000000000000010"' in r.text
     r = client.get("/artists?q=some+band")
     assert "1 artists match" in r.text and "Some Band" in r.text
     r = client.get("/a/UCartist0000000000000010")
@@ -135,11 +135,13 @@ def test_sitemaps_and_robots(client, db_path):
         and "/sitemap-artists-0.xml" in r.text
     )
     ch = client.get("/sitemap-channels-0.xml").text
-    assert f"/r/yt_{BIG}</loc>" in ch and "UCsmall" not in ch, (
+    assert f"/r/big-channel-yt_{BIG}</loc>" in ch and "UCsmall" not in ch, (
         "only channels at or above the threshold"
     )
     ar = client.get("/sitemap-artists-0.xml").text
-    assert "/a/UCartist0000000000000003</loc>" in ar and "UCartist0000000000000010" not in ar
+    assert (
+        "/a/artist-3-UCartist0000000000000003</loc>" in ar and "UCartist0000000000000010" not in ar
+    )
     assert client.get("/sitemap-channels-7.xml").status_code == 404
     lb = client.get("/sitemap-labels.xml").text
     assert "/labels</loc>" in lb
@@ -173,3 +175,16 @@ def test_navigation_and_about(client):
 def test_index_channels_cli(db_path):
     res = CliRunner().invoke(cli.app, ["index-channels", "--db", str(db_path)])
     assert res.exit_code == 0 and "channels with dataset videos" in res.output
+
+
+def test_bare_and_stale_slug_urls_resolve_with_one_canonical(client):
+    canon = f'<link rel="canonical" href="http://testserver/r/big-channel-yt_{BIG}">'
+    bare = client.get(f"/r/yt_{BIG}")
+    stale = client.get(f"/r/old-name-yt_{BIG}")
+    assert bare.status_code == 200 and stale.status_code == 200
+    assert canon in bare.text and canon in stale.text
+    assert "Big Channel has 6 videos listed" in bare.text, "the H1 names the channel"
+    assert client.get(f"/r/big-channel-yt_{BIG}.json").status_code == 404, "exports are id-only"
+    a = client.get("/a/stale-UCartist0000000000000010")
+    assert a.status_code == 200 and "Some Band has 1 song listed" in a.text
+    assert client.get("/a/not-an-id").status_code == 404

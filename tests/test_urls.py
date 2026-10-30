@@ -4,6 +4,7 @@ from youtrained.urls import (
     ArtistRef,
     ChannelRef,
     UnsupportedUrl,
+    looks_like_channel,
     parse_spotify_artist_url,
     parse_youtube_channel_url,
 )
@@ -90,3 +91,21 @@ def test_youtube_rejects(url):
 def test_youtube_video_message_is_helpful():
     with pytest.raises(UnsupportedUrl, match="channel link instead"):
         parse_youtube_channel_url("https://youtu.be/dQw4w9WgXcQ")
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("@bonobo", True),
+        ("UC" + "a" * 22, True),
+        ("https://www.youtube.com/@bonobo", True),
+        ("youtube.com/channel/UCaaaaaaaaaaaaaaaaaaaaaa", True),
+        ("music.youtube.com/channel/UCaaaaaaaaaaaaaaaaaaaaaa", True),
+        ("youtu.be/dQw4w9WgXcQ", True),
+        ("Bonobo", False),
+        ("Sigur Ros ft. Jonsi", False),
+        ("The Beatles", False),
+    ],
+)
+def test_looks_like_channel(text, expected):
+    assert looks_like_channel(text) is expected

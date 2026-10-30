@@ -8,7 +8,7 @@
     <span class="eyebrow">Artist</span>
     <a href="https://music.youtube.com/channel/{{ artist.artist_id }}">{{ who }} on YouTube Music</a>
   </p>
-  <h1><span class="yn">Yes.</span> {{ "{:,}".format(n) }} of your song{{ "" if n == 1 else "s" }} {{ "is" if n == 1 else "are" }} listed in a dataset used to train AI music models.</h1>
+  <h1><span class="yn">Yes.</span> {{ who }} has {{ "{:,}".format(n) }} song{{ "" if n == 1 else "s" }} listed in a dataset used to train AI music models.</h1>
 </div></section>
 
 <div class="wrap">
@@ -34,9 +34,9 @@
     </div>
     {% if pages > 1 %}
     <nav class="pager">
-      {% if page > 1 %}<a href="/a/{{ artist.artist_id }}?page={{ page - 1 }}">‹ Previous</a>{% endif %}
+      {% if page > 1 %}<a href="{{ artist_url(artist.artist_id, artist.name) }}?page={{ page - 1 }}">‹ Previous</a>{% endif %}
       <span>Page {{ page }} of {{ pages }}</span>
-      {% if page < pages %}<a href="/a/{{ artist.artist_id }}?page={{ page + 1 }}">Next ›</a>{% endif %}
+      {% if page < pages %}<a href="{{ artist_url(artist.artist_id, artist.name) }}?page={{ page + 1 }}">Next ›</a>{% endif %}
     </nav>
     {% endif %}
   </section>

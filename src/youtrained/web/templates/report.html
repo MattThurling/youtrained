@@ -4,7 +4,7 @@
   <meta property="og:title" content="{{ headline }}">
   <meta property="og:description" content="{{ report.subject.title }} checked against {{ report.summary.datasets|length or 3 }} public AI research datasets with YouTrained.">
   <meta property="og:image" content="{{ base_url }}/r/{{ report.report_id }}/og.png">
-  <meta property="og:url" content="{{ base_url }}/r/{{ report.report_id }}">
+  <meta property="og:url" content="{{ base_url }}{{ report_url(report.report_id, report.subject.title) }}">
   <meta name="twitter:card" content="summary_large_image">
 {% endblock %}
 {% block content %}
@@ -58,7 +58,7 @@
     <div class="hits">
       {% for hit in a.songs[:300] %}{% include "_hit.html" %}{% endfor %}
     </div>
-    {% if a.songs|length > 300 %}<p class="more">Showing 300 of {{ "{:,}".format(a.songs|length) }} songs. <a href="/a/{{ a.artist_id }}">See all on the artist page</a>.</p>{% endif %}
+    {% if a.songs|length > 300 %}<p class="more">Showing 300 of {{ "{:,}".format(a.songs|length) }} songs. <a href="{{ artist_url(a.artist_id, a.name) }}">See all on the artist page</a>.</p>{% endif %}
     {% endfor %}
   </section>
   {% endif %}
@@ -113,7 +113,7 @@
       <a class="btn quiet" rel="nofollow" href="/r/{{ report.report_id }}.json">JSON</a>
       <a class="btn quiet" href="/">Check another name</a>
     </div>
-    <p class="share">Share this page <code>{{ base_url }}/r/{{ report.report_id }}</code></p>
+    <p class="share">Share this page <code>{{ base_url }}{{ report_url(report.report_id, report.subject.title) }}</code></p>
   </div>
 </div></section>
 

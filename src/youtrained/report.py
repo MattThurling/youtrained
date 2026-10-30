@@ -149,28 +149,33 @@ def headline(report: dict[str, Any]) -> str:
 
 
 def verdict_parts(report: dict[str, Any]) -> tuple[str, str]:
-    """("Yes"|"No", sentence): the one-word answer and the plain-English line under it.
-    Says 'listed in datasets', never more."""
+    """("Yes"|"No", sentence): the one-word answer and the H1 line, which names the subject so
+    the page matches a search for the artist or channel. Says 'listed in datasets', never more."""
     s = report["summary"]
+    subject = report["subject"]
+    who = subject.get("title") or subject.get("id") or "This channel"
     videos = s["matched_keys"]
     songs = s.get("artist_songs", 0)
+
+    def n(count: int, noun: str) -> str:
+        return f"{count:,} {noun}{'' if count == 1 else 's'}"
+
     if songs and videos:
         return "Yes", (
-            f"{songs:,} of your songs and {videos:,} of your videos are listed in datasets "
+            f"{who} has {n(songs, 'song')} and {n(videos, 'video')} listed in datasets "
             "used to train and test AI music models."
         )
     if songs:
-        return "Yes", (
-            f"{songs:,} of your song{'' if songs == 1 else 's'} "
-            f"{'is' if songs == 1 else 'are'} listed in a dataset used to train AI music models."
+        return (
+            "Yes",
+            f"{who} has {n(songs, 'song')} listed in a dataset used to train AI music models.",
         )
     if videos:
         return "Yes", (
-            f"{videos:,} of your video{'' if videos == 1 else 's'} "
-            f"{'is' if videos == 1 else 'are'} listed in datasets used to train and test AI models."
+            f"{who} has {n(videos, 'video')} listed in datasets used to train and test AI models."
         )
     return "No", (
-        "We found nothing listed under this name. That's good news, with the caveat that we "
+        f"We found nothing listed for {who}. That's good news, with the caveat that we "
         "only index three public datasets."
     )
 

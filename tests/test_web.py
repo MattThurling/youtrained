@@ -54,16 +54,21 @@ def client(tmp_path, cache_dir, shared_id):
 def test_index_renders_form(client):
     r = client.get("/")
     assert r.status_code == 200
-    assert 'name="youtube"' in r.text and "LAION-DISCO-12M" in r.text
+    assert 'name="q"' in r.text and "LAION-DISCO-12M" in r.text
     assert 'href="/static/style.css?v=' in r.text, "stylesheet link is cache-busted"
     assert client.get("/static/style.css").status_code == 200
+
+
+def test_single_box_takes_a_handle(client):
+    r = client.post("/check", data={"q": "@someband"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/r/someband-yt_someband"
 
 
 def test_bad_url_shows_error(client):
     r = client.post("/check", data={"youtube": "https://youtu.be/dQw4w9WgXcQ"})
     assert r.status_code == 400 and "channel link instead" in r.text
     r = client.post("/check", data={"youtube": ""})
-    assert r.status_code == 400 and "Type your artist or channel name" in r.text
+    assert r.status_code == 400 and "Type your artist name" in r.text
 
 
 def test_unknown_channel_is_503(client):
@@ -77,7 +82,7 @@ def test_check_redirects_to_stable_report(client, shared_id):
     r = client.post(
         "/check", data={"youtube": "https://youtube.com/@someband"}, follow_redirects=False
     )
-    assert r.status_code == 303 and r.headers["location"] == "/r/yt_someband"
+    assert r.status_code == 303 and r.headers["location"] == "/r/someband-yt_someband"
     page = client.get("/r/yt_someband")
     assert page.status_code == 200
     assert "someband: 1 of 2 videos appear in AI training datasets" in page.text
@@ -104,7 +109,7 @@ def test_check_redirects_to_stable_report(client, shared_id):
     r2 = client.post(
         "/check", data={"youtube": "https://youtube.com/@someband"}, follow_redirects=False
     )
-    assert r2.headers["location"] == "/r/yt_someband"
+    assert r2.headers["location"] == "/r/someband-yt_someband"
 
 
 def test_no_hits_report(client):
@@ -253,7 +258,7 @@ def test_report_verdict_tiles_then_evidence_then_context(client, shared_id):
     page = client.get("/r/yt_someband").text
     assert '<span class="yn">Yes.</span>' in page
     assert (
-        "1 of your songs and 1 of your videos are listed in datasets used to train and test AI music models."
+        "someband has 1 song and 1 video listed in datasets used to train and test AI music models."
         in page
     )
     assert "video in AudioSet" in page and "song in LAION-DISCO-12M" in page
@@ -273,9 +278,7 @@ def test_report_verdict_tiles_then_evidence_then_context(client, shared_id):
 def test_no_match_verdict(client):
     client.post("/check", data={"youtube": "@nobody"})
     page = client.get("/r/yt_nobody").text
-    assert (
-        '<span class="yn">No.</span>' in page and "We found nothing listed under this name." in page
-    )
+    assert '<span class="yn">No.</span>' in page and "We found nothing listed for nobody." in page
     assert '<div class="tiles' not in page and '<article class="hit">' not in page
 
 

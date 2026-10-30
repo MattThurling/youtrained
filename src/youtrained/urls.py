@@ -30,6 +30,17 @@ _SPOTIFY_ID = re.compile(r"^[0-9A-Za-z]{22}$")
 _YT_CHANNEL_ID = re.compile(r"^UC[0-9A-Za-z_-]{22}$")
 
 
+def looks_like_channel(text: str) -> bool:
+    """Is this a channel reference (a handle, a channel id or a YouTube link) rather than an
+    artist name? The single input box sends names to search and everything else to the parser,
+    so a band called "Bonobo" never sees "not a YouTube URL"."""
+    t = text.strip()
+    if t.startswith("@") or _YT_CHANNEL_ID.match(t):
+        return True
+    low = t.lower()
+    return "youtube.com" in low or "youtu.be" in low
+
+
 def _path_parts(url: str) -> tuple[str, list[str]]:
     url = url.strip()
     if "://" not in url:
